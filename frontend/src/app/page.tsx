@@ -1,0 +1,157 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { Sidebar } from '../components/Sidebar';
+import { DashboardView } from '../components/DashboardView';
+import { UploadView } from '../components/UploadView';
+import { HistoryView } from '../components/HistoryView';
+import { BenchmarksView } from '../components/BenchmarksView';
+import { 
+  fetchPlanningVersions, 
+  fetchLatestPlanningVersion, 
+  fetchBenchmarks, 
+  PlanningVersion, 
+  BenchmarkItem 
+} from '../lib/api';
+
+const FALLBACK_VERSION: PlanningVersion = {
+  id: 1,
+  version_id: "2026-08-V1",
+  month_name: "August 2026",
+  horizon: "Aug 2026 - Jul 2027",
+  upload_date: new Date().toISOString(),
+  uploaded_by: "J. Smith (Sr. Production Planner)",
+  status: "Validated",
+  file_name: "PD-Bhubaneswar-Aug2026-Planning.xlsx",
+  file_size: "4.8 MB",
+  processing_time_ms: 1420,
+  months: [
+    "Aug 2026", "Sep 2026", "Oct 2026", "Nov 2026", "Dec 2026", "Jan 2027",
+    "Feb 2027", "Mar 2027", "Apr 2027", "May 2027", "Jun 2027", "Jul 2027"
+  ],
+  departments: {
+    production: {
+      capacityHours: [12000, 12000, 12500, 12000, 11500, 12000, 12000, 12500, 12000, 12000, 12500, 12000],
+      loadHours:     [10500, 11200, 11800, 12400, 10900, 10800, 11400, 11900, 11100, 11600, 12100, 11300],
+      ordersCount:   [145, 152, 160, 168, 140, 142, 150, 158, 149, 155, 162, 151]
+    },
+    welding: {
+      capacityHours: [4500, 4500, 4500, 4500, 4200, 4500, 4500, 4500, 4500, 4500, 4500, 4500],
+      laborSupply:   [4400, 4450, 4500, 4550, 4200, 4450, 4480, 4520, 4460, 4490, 4510, 4470]
+    },
+    machining: {
+      capacityHours: [5200, 5200, 5200, 5200, 4900, 5200, 5200, 5200, 5200, 5200, 5200, 5200],
+      millingLoad:   [2600, 2750, 2850, 3010, 2500, 2650, 2780, 2890, 2710, 2820, 2940, 2760]
+    },
+    rr: {
+      capacityHours: [3100, 3100, 3100, 3100, 2900, 3100, 3100, 3100, 3100, 3100, 3100, 3100],
+      refurbLoad:    [2700, 2800, 2910, 2980, 2600, 2720, 2830, 2890, 2780, 2850, 2920, 2810]
+    },
+    plating: {
+      capacityHours: [2200, 2200, 2200, 2200, 2000, 2200, 2200, 2200, 2200, 2200, 2200, 2200],
+      platingLoad:   [1850, 1920, 1990, 2080, 1780, 1860, 1940, 2010, 1910, 1970, 2030, 1930]
+    },
+    service_machining: {
+      capacityHours: [1800, 1800, 1800, 1800, 1600, 1800, 1800, 1800, 1800, 1800, 1800, 1800],
+      serviceLoad:   [1420, 1510, 1580, 1650, 1380, 1460, 1520, 1590, 1490, 1540, 1610, 1500]
+    },
+    scb: {
+      capacityHours: [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000],
+      groupCompany:  [5800, 6100, 6400, 6700, 5400, 5900, 6200, 6500, 6000, 6300, 6600, 6100]
+    }
+  },
+  validation_warnings: [
+    "Capacity utilization in Nov 2026 reaches 96.4% in Machining Dept.",
+    "Service Machining contract hours slightly above historical baseline."
+  ]
+};
+
+export default function Home() {
+  const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [versions, setVersions] = useState<PlanningVersion[]>([]);
+  const [selectedVersion, setSelectedVersion] = useState<PlanningVersion | null>(null);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkItem[]>([]);
+  const [apiConnected, setApiConnected] = useState<boolean>(false);
+
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        const [verList, latestVer, bList] = await Promise.all([
+          fetchPlanningVersions(),
+          fetchLatestPlanningVersion(),
+          fetchBenchmarks()
+        ]);
+
+        if (verList && verList.length > 0) {
+          setVersions(verList);
+          setApiConnected(true);
+        } else {
+          setVersions([FALLBACK_VERSION]);
+        }
+
+        if (latestVer) {
+          setSelectedVersion(latestVer);
+        } else {
+          setSelectedVersion(FALLBACK_VERSION);
+        }
+
+        if (bList && bList.length > 0) {
+          setBenchmarks(bList);
+        }
+      } catch (err) {
+        console.warn('Backend API connection check fallback:', err);
+        setVersions([FALLBACK_VERSION]);
+        setSelectedVersion(FALLBACK_VERSION);
+      }
+    }
+
+    loadInitialData();
+  }, []);
+
+  const handleUploadSuccess = (newVersion: PlanningVersion) => {
+    setVersions(prev => [newVersion, ...prev]);
+    setSelectedVersion(newVersion);
+    setCurrentView('dashboard');
+  };
+
+  const handleSelectVersion = (version: PlanningVersion) => {
+    setSelectedVersion(version);
+    setCurrentView('dashboard');
+  };
+
+  return (
+    <div className="app-container">
+      <Sidebar currentView={currentView} onSelectView={setCurrentView} />
+
+      <main className="main-content">
+        <header className="top-header">
+          <div className="header-title">
+            <h2>SMS Capacity Planning Platform</h2>
+            <p>SMS Group Enterprise Plant — 12 Month Capacity Horizon</p>
+          </div>
+
+          <div className="status-indicator">
+            <div className="dot-online" />
+            <span>{apiConnected ? 'Django REST Connected' : 'Local Standalone Mode'}</span>
+          </div>
+        </header>
+
+        {currentView === 'dashboard' && (
+          <DashboardView version={selectedVersion} />
+        )}
+
+        {currentView === 'upload' && (
+          <UploadView onUploadSuccess={handleUploadSuccess} />
+        )}
+
+        {currentView === 'history' && (
+          <HistoryView versions={versions} onSelectVersion={handleSelectVersion} />
+        )}
+
+        {currentView === 'benchmarks' && (
+          <BenchmarksView benchmarks={benchmarks} />
+        )}
+      </main>
+    </div>
+  );
+}

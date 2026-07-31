@@ -1,0 +1,39 @@
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.vercel/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Python / Django / Virtual environments
+backend/venv/
+backend/env/
+backend/ENV/
+backend/__pycache__/
+backend/*/__pycache__/
+backend/*/*/__pycache__/
+backend/*.pyc
+backend/db.sqlite3
+backend/media/
+backend/staticfiles/
+Graph_Automation/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs & Environment
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env*.local
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
