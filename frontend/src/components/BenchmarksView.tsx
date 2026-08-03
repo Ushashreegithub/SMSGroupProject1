@@ -22,7 +22,7 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ benchmarks }) =>
         Department Capacity Benchmarks & Targets
       </h3>
       <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
-        Configured target thresholds stored in Django Backend and synced across planning validation pipelines.
+        Configured target thresholds stored in Central Database and synced across planning validation pipelines.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>

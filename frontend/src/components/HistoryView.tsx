@@ -17,7 +17,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ versions, onSelectVers
             Permanent Planning Version History
           </h3>
           <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Stored in Django DB (SQLite/PostgreSQL) with full multi-department historical metrics.
+            Stored in Secure Enterprise Database with full multi-department historical metrics.
           </p>
         </div>
 

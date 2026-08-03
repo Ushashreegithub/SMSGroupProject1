@@ -1,19 +1,30 @@
 import React from 'react';
+import { SmsGroupLogo } from './SmsGroupLogo';
+import { AuthUser } from '../lib/api';
 import { 
   LayoutDashboard, 
   UploadCloud, 
   History, 
   BarChart3, 
   ShieldCheck,
-  Cpu
+  Cpu,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
   onSelectView: (view: string) => void;
+  currentUser?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  currentView, 
+  onSelectView,
+  currentUser,
+  onLogout 
+}) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload', label: 'Upload Planning', icon: UploadCloud },
@@ -21,13 +32,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
     { id: 'benchmarks', label: 'Benchmarks', icon: BarChart3 },
   ];
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'JS';
+    const parts = name.split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-badge">SMS</div>
+      <div className="brand" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
+        <SmsGroupLogo height={28} textColor="#ffffff" />
         <div className="brand-text">
-          <h1>Capacity Planning</h1>
-          <span>SMS GROUP ENTERPRISE</span>
+          <h1 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginTop: '0.2rem' }}>
+            Capacity Planning
+          </h1>
+          <span style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)' }}>ENTERPRISE PLANT</span>
         </div>
       </div>
 
@@ -52,16 +72,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
         })}
       </div>
 
-      <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-          <ShieldCheck size={16} color="var(--accent-emerald)" />
-          <span>Django REST API Connected</span>
+      {/* User Profile Card & System Status */}
+      <div className="sidebar-footer">
+        {currentUser && (
+          <div className="user-profile-badge">
+            <div className="avatar-circle">
+              {getInitials(currentUser.name)}
+            </div>
+            <div className="user-info">
+              <span className="user-name">{currentUser.name}</span>
+              <span className="user-role">{currentUser.role}</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+            <ShieldCheck size={15} color="var(--accent-emerald)" />
+            <span>Enterprise API Sync</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+            <Cpu size={15} color="var(--accent-cyan)" />
+            <span>Capacity Engine v2.4</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
-          <Cpu size={16} color="var(--accent-cyan)" />
-          <span>Next.js App Router v14+</span>
-        </div>
+
+        {onLogout && (
+          <button className="logout-button" onClick={onLogout} title="Sign out of system">
+            <LogOut size={16} />
+            <span>Log Out</span>
+          </button>
+        )}
       </div>
     </aside>
   );
 };
+

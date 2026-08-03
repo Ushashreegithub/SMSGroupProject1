@@ -26,7 +26,7 @@ export const UploadView: React.FC<UploadViewProps> = ({ onUploadSuccess }) => {
 
     try {
       const result = await uploadPlanningSpreadsheet(selectedFile);
-      setSuccessMsg(`Successfully uploaded and validated "${result.file_name}" via Django REST API!`);
+      setSuccessMsg(`Successfully uploaded and validated "${result.file_name}"!`);
       onUploadSuccess(result);
     } catch (err: any) {
       setErrorMessage(err.message || 'Upload failed. Please check backend connection.');
@@ -42,7 +42,7 @@ export const UploadView: React.FC<UploadViewProps> = ({ onUploadSuccess }) => {
         Upload Monthly Capacity Spreadsheet
       </h3>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-        Upload `.xlsx` or `.csv` files for Bhubaneswar plant capacity validation and automated 12-month horizon ingestion into Django REST backend.
+        Upload `.xlsx` or `.csv` files for Bhubaneswar plant capacity validation and automated 12-month horizon ingestion into the Capacity Engine.
       </p>
 
       {errorMessage && (

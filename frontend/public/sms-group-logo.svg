@@ -1,0 +1,11 @@
+<svg width="220" height="48" viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="35" fill="#FFFFFF" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-0.5px">SMS</text>
+  <g transform="translate(94, 23)">
+    <path d="M 0 -16 A 16 16 0 0 0 0 16" stroke="#E30613" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+    <path d="M 0 16 A 16 16 0 0 0 0 -16" stroke="#00529C" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+    <path d="M 0 -9.5 A 9.5 9.5 0 0 0 0 9.5" stroke="#00529C" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M 0 9.5 A 9.5 9.5 0 0 0 0 -9.5" stroke="#E30613" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <circle cx="0" cy="0" r="3.5" fill="#FFFFFF" />
+  </g>
+  <text x="122" y="35" fill="#FFFFFF" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fontSize="34" letterSpacing="-0.5px">group</text>
+</svg>

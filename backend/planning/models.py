@@ -14,6 +14,7 @@ class PlanningVersion(models.Model):
     # Store complete structured JSON payload for dynamic frontend consumption
     months = models.JSONField(default=list)
     departments = models.JSONField(default=dict)
+    chart_urls = models.JSONField(default=dict)
     validation_warnings = models.JSONField(default=list)
 
     class Meta:

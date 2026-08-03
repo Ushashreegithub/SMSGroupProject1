@@ -6,12 +6,15 @@ import { DashboardView } from '../components/DashboardView';
 import { UploadView } from '../components/UploadView';
 import { HistoryView } from '../components/HistoryView';
 import { BenchmarksView } from '../components/BenchmarksView';
+import { LoginView } from '../components/LoginView';
+import { SmsGroupLogo } from '../components/SmsGroupLogo';
 import { 
   fetchPlanningVersions, 
   fetchLatestPlanningVersion, 
   fetchBenchmarks, 
   PlanningVersion, 
-  BenchmarkItem 
+  BenchmarkItem,
+  AuthUser
 } from '../lib/api';
 
 const FALLBACK_VERSION: PlanningVersion = {
@@ -60,6 +63,15 @@ const FALLBACK_VERSION: PlanningVersion = {
       groupCompany:  [5800, 6100, 6400, 6700, 5400, 5900, 6200, 6500, 6000, 6300, 6600, 6100]
     }
   },
+  chart_urls: {
+    production: 'http://localhost:8000/media/charts/production_dashboard.png',
+    welding: 'http://localhost:8000/media/charts/welding_dashboard.png',
+    machining: 'http://localhost:8000/media/charts/machining_dashboard.png',
+    rr: 'http://localhost:8000/media/charts/rr_dashboard.png',
+    plating: 'http://localhost:8000/media/charts/plating_dashboard.png',
+    scb: 'http://localhost:8000/media/charts/scb_dashboard.png',
+    service_machining: 'http://localhost:8000/media/charts/service_machining_dashboard.png',
+  },
   validation_warnings: [
     "Capacity utilization in Nov 2026 reaches 96.4% in Machining Dept.",
     "Service Machining contract hours slightly above historical baseline."
@@ -67,13 +79,37 @@ const FALLBACK_VERSION: PlanningVersion = {
 };
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const [versions, setVersions] = useState<PlanningVersion[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<PlanningVersion | null>(null);
   const [benchmarks, setBenchmarks] = useState<BenchmarkItem[]>([]);
   const [apiConnected, setApiConnected] = useState<boolean>(false);
 
+  // Check saved session on mount
   useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('sms_user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed.name) {
+          setCurrentUser(parsed);
+          setIsAuthenticated(true);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved session:', e);
+    } finally {
+      setIsInitializing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     async function loadInitialData() {
       try {
         const [verList, latestVer, bList] = await Promise.all([
@@ -106,7 +142,27 @@ export default function Home() {
     }
 
     loadInitialData();
-  }, []);
+  }, [isAuthenticated]);
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    try {
+      localStorage.setItem('sms_user', JSON.stringify(user));
+    } catch (e) {
+      console.warn('LocalStorage save failed:', e);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('sms_user');
+    } catch (e) {
+      console.warn('LocalStorage remove failed:', e);
+    }
+  };
 
   const handleUploadSuccess = (newVersion: PlanningVersion) => {
     setVersions(prev => [newVersion, ...prev]);
@@ -119,20 +175,53 @@ export default function Home() {
     setCurrentView('dashboard');
   };
 
+  if (isInitializing) {
+    return (
+      <div className="login-container">
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="spinner-sm" />
+          Initializing SMS Group System...
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="app-container">
-      <Sidebar currentView={currentView} onSelectView={setCurrentView} />
+      <Sidebar 
+        currentView={currentView} 
+        onSelectView={setCurrentView}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
 
       <main className="main-content">
         <header className="top-header">
-          <div className="header-title">
-            <h2>SMS Capacity Planning Platform</h2>
-            <p>SMS Group Enterprise Plant — 12 Month Capacity Horizon</p>
+          <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <SmsGroupLogo height={32} textColor="#ffffff" />
+            <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '1.25rem' }}>
+              <h2>SMS Capacity Planning Platform</h2>
+              <p>SMS Group Enterprise Plant — 12 Month Capacity Horizon</p>
+            </div>
           </div>
 
-          <div className="status-indicator">
-            <div className="dot-online" />
-            <span>{apiConnected ? 'Django REST Connected' : 'Local Standalone Mode'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div className="status-indicator">
+              <div className="dot-online" />
+              <span>{apiConnected ? 'System Operational' : 'Offline Mode'}</span>
+            </div>
+
+            <button 
+              onClick={handleLogout} 
+              className="header-logout-btn"
+              title="Sign out of system"
+            >
+              Log Out
+            </button>
           </div>
         </header>
 
@@ -155,3 +244,4 @@ export default function Home() {
     </div>
   );
 }
+
