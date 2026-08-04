@@ -67,15 +67,8 @@ export function getApiBaseUrl(): string {
 
 export function getChartUrl(url: string | undefined): string {
   if (!url) return '';
-  const apiBase = getApiBaseUrl();
-  const backendOrigin = apiBase.replace(/\/api\/v1\/?$/, '');
-
   if (url.startsWith('http://localhost:8000')) {
-    const relativePath = url.replace('http://localhost:8000', '');
-    return `${backendOrigin}${relativePath}`;
-  }
-  if (url.startsWith('/')) {
-    return `${backendOrigin}${url}`;
+    return url.replace('http://localhost:8000', '');
   }
   return url;
 }

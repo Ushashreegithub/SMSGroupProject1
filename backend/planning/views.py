@@ -99,6 +99,10 @@ def sync_graph_automation_charts(request=None):
     media_charts = Path(settings.MEDIA_ROOT) / "charts"
     media_charts.mkdir(parents=True, exist_ok=True)
 
+    frontend_public_charts = workspace_root / "frontend" / "public" / "media" / "charts"
+    if frontend_public_charts.parent.parent.exists():
+        frontend_public_charts.mkdir(parents=True, exist_ok=True)
+
     mapping = {
         "production": scb_dashboard_png,
         "welding": graph_out / "charts" / "welding" / "Historical_Welding_Dashboard.png",
@@ -114,10 +118,9 @@ def sync_graph_automation_charts(request=None):
         if src_path.exists():
             dest = media_charts / f"{key}_dashboard.png"
             shutil.copy(src_path, dest)
-            if request:
-                urls[key] = request.build_absolute_uri(f"/media/charts/{key}_dashboard.png")
-            else:
-                urls[key] = f"/media/charts/{key}_dashboard.png"
+            if frontend_public_charts.exists():
+                shutil.copy(src_path, frontend_public_charts / f"{key}_dashboard.png")
+            urls[key] = f"/media/charts/{key}_dashboard.png"
     return urls
 
 
