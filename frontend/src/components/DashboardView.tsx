@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlanningVersion } from '../lib/api';
+import { ManualInputPanel } from './ManualInputPanel';
 import { 
   Activity, 
   AlertTriangle, 
@@ -64,6 +65,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
           </div>
         </div>
       )}
+
+      {/* SMS Group Manual Entry Component */}
+      <ManualInputPanel />
 
       {/* Metrics Row */}
       <div className="metrics-grid">

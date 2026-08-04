@@ -168,3 +168,55 @@ export async function loginUser(username: string, password: string): Promise<Aut
   throw new Error('Invalid username or password. Check company credentials.');
 }
 
+export interface CalculatedTaskItem {
+  id: string;
+  name: string;
+  category: string;
+  monthly_hours: number;
+  daily_hours: number;
+  days_in_month: number;
+  share_pct: number;
+}
+
+export interface MonthlyCalculation {
+  month: string;
+  month_num: number;
+  days_in_month: number;
+  monthly_available_hours: number;
+  daily_available_hours: number;
+  tasks: CalculatedTaskItem[];
+}
+
+export interface ManualCalculationResponse {
+  status: string;
+  inputs: {
+    annual_hours: number;
+    year: number;
+    is_leap_year: boolean;
+    total_days_in_year: number;
+    daily_available_hours: number;
+    total_tasks_count: number;
+  };
+  monthly_calculations: MonthlyCalculation[];
+}
+
+export async function calculateManualPlanning(
+  annualHours: number, 
+  year: number = 2026, 
+  tasks: Array<{ id: string; name: string; category?: string; hours: number }>
+): Promise<ManualCalculationResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/versions/calculate_manual_planning/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annual_hours: annualHours, year, tasks })
+    });
+    if (!res.ok) throw new Error('Failed to compute manual planning calculations');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error computing manual planning, fallback to local math:', err);
+    return null;
+  }
+}
+
+

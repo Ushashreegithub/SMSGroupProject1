@@ -213,6 +213,78 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(latest_ver)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'])
+    def calculate_manual_planning(self, request):
+        import calendar
+        annual_hours = float(request.data.get('annual_hours', 120000))
+        year = int(request.data.get('year', 2026))
+        tasks = request.data.get('tasks', [])
+        
+        # 1. Determine days in year (366 if leap year, else 365)
+        is_leap = calendar.isleap(year)
+        total_days_in_year = 366 if is_leap else 365
+        
+        # 2. 1 day's available hours
+        daily_available_hours = annual_hours / total_days_in_year
+        
+        # 3. Monthly available hours for each month (Jan - Dec)
+        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        total_task_weight = sum(float(t.get('hours', 0)) for t in tasks)
+        
+        monthly_summary = []
+        for month_num in range(1, 13):
+            m_name = month_names[month_num - 1]
+            days_in_month = calendar.monthrange(year, month_num)[1]
+            
+            # 1 day's available hours * days in month
+            monthly_avl_hours = daily_available_hours * days_in_month
+            
+            # Split hours of each month based on tasks
+            task_breakdown = []
+            for task in tasks:
+                task_id = task.get('id', task.get('name'))
+                task_hours_input = float(task.get('hours', 0))
+                
+                if total_task_weight > 0:
+                    ratio = task_hours_input / total_task_weight
+                else:
+                    ratio = 1.0 / len(tasks) if len(tasks) > 0 else 0
+                    
+                task_monthly_hours = monthly_avl_hours * ratio
+                task_daily_hours = daily_available_hours * ratio
+                
+                task_breakdown.append({
+                    "id": task_id,
+                    "name": task.get('name'),
+                    "category": task.get('category', 'Task'),
+                    "monthly_hours": round(task_monthly_hours, 2),
+                    "daily_hours": round(task_daily_hours, 2),
+                    "days_in_month": days_in_month,
+                    "share_pct": round(ratio * 100, 2)
+                })
+                
+            monthly_summary.append({
+                "month": f"{m_name} {year}",
+                "month_num": month_num,
+                "days_in_month": days_in_month,
+                "monthly_available_hours": round(monthly_avl_hours, 2),
+                "daily_available_hours": round(daily_available_hours, 2),
+                "tasks": task_breakdown
+            })
+            
+        return Response({
+            "status": "success",
+            "inputs": {
+                "annual_hours": annual_hours,
+                "year": year,
+                "is_leap_year": is_leap,
+                "total_days_in_year": total_days_in_year,
+                "daily_available_hours": round(daily_available_hours, 4),
+                "total_tasks_count": len(tasks)
+            },
+            "monthly_calculations": monthly_summary
+        }, status=status.HTTP_200_OK)
+
 
 class BenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Benchmark.objects.all()

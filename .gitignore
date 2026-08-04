@@ -17,6 +17,7 @@ backend/*/*/__pycache__/
 backend/*.pyc
 backend/db.sqlite3
 backend/media/
+backend/temp_uploads/
 backend/staticfiles/
 Graph_Automation/.venv/
 **/__pycache__/
