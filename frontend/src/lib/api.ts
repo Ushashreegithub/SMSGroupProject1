@@ -57,6 +57,19 @@ export interface AuthResponse {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+export function getChartUrl(url: string | undefined): string {
+  if (!url) return '';
+  const backendOrigin = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  if (url.startsWith('http://localhost:8000')) {
+    const relativePath = url.replace('http://localhost:8000', '');
+    return `${backendOrigin}${relativePath}`;
+  }
+  if (url.startsWith('/')) {
+    return `${backendOrigin}${url}`;
+  }
+  return url;
+}
+
 export async function fetchPlanningVersions(): Promise<PlanningVersion[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/versions/`);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlanningVersion } from '../lib/api';
+import { PlanningVersion, getChartUrl } from '../lib/api';
 import { ManualInputPanel } from './ManualInputPanel';
 import { 
   Activity, 
@@ -157,7 +157,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
         {version.chart_urls?.[selectedDept] ? (
           <div style={{ marginTop: '1.5rem', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <img 
-              src={version.chart_urls[selectedDept]} 
+              src={getChartUrl(version.chart_urls[selectedDept])} 
               alt={`${selectedDept} Generated Dashboard Chart`} 
               style={{ width: '100%', maxHeight: '520px', objectFit: 'contain', borderRadius: '8px' }} 
             />

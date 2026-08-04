@@ -64,13 +64,13 @@ const FALLBACK_VERSION: PlanningVersion = {
     }
   },
   chart_urls: {
-    production: 'http://localhost:8000/media/charts/production_dashboard.png',
-    welding: 'http://localhost:8000/media/charts/welding_dashboard.png',
-    machining: 'http://localhost:8000/media/charts/machining_dashboard.png',
-    rr: 'http://localhost:8000/media/charts/rr_dashboard.png',
-    plating: 'http://localhost:8000/media/charts/plating_dashboard.png',
-    scb: 'http://localhost:8000/media/charts/scb_dashboard.png',
-    service_machining: 'http://localhost:8000/media/charts/service_machining_dashboard.png',
+    production: '/media/charts/production_dashboard.png',
+    welding: '/media/charts/welding_dashboard.png',
+    machining: '/media/charts/machining_dashboard.png',
+    rr: '/media/charts/rr_dashboard.png',
+    plating: '/media/charts/plating_dashboard.png',
+    scb: '/media/charts/scb_dashboard.png',
+    service_machining: '/media/charts/service_machining_dashboard.png',
   },
   validation_warnings: [
     "Capacity utilization in Nov 2026 reaches 96.4% in Machining Dept.",

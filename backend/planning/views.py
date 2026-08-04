@@ -87,7 +87,7 @@ def run_graph_automation(file_path=None):
         return False
 
 
-def sync_graph_automation_charts():
+def sync_graph_automation_charts(request=None):
     workspace_root = Path(settings.BASE_DIR).parent
     graph_out = workspace_root / "Graph_Automation" / "output"
     graph_outs = workspace_root / "Graph_Automation" / "outputs"
@@ -114,12 +114,15 @@ def sync_graph_automation_charts():
         if src_path.exists():
             dest = media_charts / f"{key}_dashboard.png"
             shutil.copy(src_path, dest)
-            urls[key] = f"http://localhost:8000/media/charts/{key}_dashboard.png"
+            if request:
+                urls[key] = request.build_absolute_uri(f"/media/charts/{key}_dashboard.png")
+            else:
+                urls[key] = f"/media/charts/{key}_dashboard.png"
     return urls
 
 
-def ensure_seed_data():
-    chart_urls = sync_graph_automation_charts()
+def ensure_seed_data(request=None):
+    chart_urls = sync_graph_automation_charts(request=request)
     
     if not PlanningVersion.objects.exists():
         PlanningVersion.objects.create(
@@ -163,7 +166,7 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
     serializer_class = PlanningVersionSerializer
 
     def list(self, request, *args, **kwargs):
-        ensure_seed_data()
+        ensure_seed_data(request=request)
         return super().list(request, *args, **kwargs)
 
     @action(detail=False, methods=['post'])
@@ -185,7 +188,7 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
                 
         run_graph_automation(file_path=temp_path)
 
-        chart_urls = sync_graph_automation_charts()
+        chart_urls = sync_graph_automation_charts(request=request)
         
         new_version = PlanningVersion.objects.create(
             version_id=version_id,
@@ -208,7 +211,7 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def latest(self, request):
-        ensure_seed_data()
+        ensure_seed_data(request=request)
         latest_ver = PlanningVersion.objects.first()
         serializer = self.get_serializer(latest_ver)
         return Response(serializer.data)
