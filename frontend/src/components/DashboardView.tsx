@@ -158,7 +158,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
         {!imageErrors[selectedDept] ? (
           <div style={{ marginTop: '1.5rem', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <img 
-              src={getChartUrl(version.chart_urls?.[selectedDept] || `/media/charts/${selectedDept}_dashboard.png`)} 
+              src={`/static_plots/${selectedDept}_dashboard.png`} 
               alt={`${selectedDept} Generated Dashboard Chart`} 
               onError={() => setImageErrors(prev => ({ ...prev, [selectedDept]: true }))}
               style={{ width: '100%', maxHeight: '520px', objectFit: 'contain', borderRadius: '8px' }} 
