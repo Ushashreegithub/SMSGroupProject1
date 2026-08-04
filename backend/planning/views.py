@@ -8,6 +8,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import PlanningVersion, Benchmark
 from .serializers import PlanningVersionSerializer, BenchmarkSerializer
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 MONTHS_AUG_2026 = [
     "Aug 2026", "Sep 2026", "Oct 2026", "Nov 2026", "Dec 2026", "Jan 2027",
@@ -301,33 +304,35 @@ class BenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
         return super().list(request, *args, **kwargs)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def login_api(request):
-    username = request.data.get('username', '').strip()
-    password = request.data.get('password', '').strip()
+    username = request.data.get("username")
+    password = request.data.get("password")
 
     if not username or not password:
-        return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Username and password are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-    # Valid company accounts
-    valid_users = {
-        "admin": {"name": "Senior Plant Admin", "role": "Plant Administrator", "email": "admin@sms-group.com"},
-        "planner@sms-group.com": {"name": "J. Smith", "role": "Sr. Production Planner", "email": "planner@sms-group.com"},
-    }
+    user = authenticate(username=username, password=password)
 
-    # Allow configured accounts or default password 'smsgroup2026' or 'admin'
-    if (username in valid_users or "@sms-group.com" in username or username.lower() == "admin") and (password in ["smsgroup2026", "admin", "password", "sms2026"] or len(password) >= 4):
-        user_info = valid_users.get(username, {
-            "name": username.split('@')[0].capitalize(),
-            "role": "Production Planner",
-            "email": username if '@' in username else f"{username}@sms-group.com"
-        })
-        return Response({
-            "success": True,
-            "token": f"sms_token_{int(time.time())}",
-            "user": user_info
-        }, status=status.HTTP_200_OK)
-    
-    return Response({"error": "Invalid enterprise credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+    if user is None:
+        return Response(
+            {"error": "Invalid username or password"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
 
+    refresh = RefreshToken.for_user(user)
+
+    return Response({
+        "success": True,
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            "is_superuser": user.is_superuser,
+        }
+    })
