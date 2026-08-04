@@ -347,7 +347,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
           </div>
         </div>
 
-        {/* Component 2: Tasks Breakdown Component (5 tasks: Welding, Machining, Assembly, RR, Plating) */}
+        {/* Component 2: Tasks Breakdown Component (5 Core SMS Group Tasks) */}
         <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(10, 16, 30, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -356,36 +356,17 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
               </div>
               <div>
                 <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-                  2. Tasks Input Component ({tasks.length} Active Tasks)
+                  2. Tasks Input Component (5 Standard SMS Group Tasks)
                 </h4>
                 <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-                  Welding, Machining, Assembly, Roll Repair (R&R), Plating Task Breakdown
+                  Target Annual Workload Hours for Welding, Machining, Assembly, Roll Repair & Plating
                 </span>
               </div>
             </div>
-
-            <button 
-              onClick={handleAddTask}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                background: 'rgba(0, 210, 255, 0.1)',
-                border: '1px solid rgba(0, 210, 255, 0.3)',
-                color: 'var(--accent-cyan)',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              <Plus size={14} /> Add Task
-            </button>
           </div>
 
           {/* Task Inputs List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '270px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '0.25rem' }}>
             {tasks.map((task, index) => {
               const taskSharePct = annualHours > 0 ? ((task.hours / annualHours) * 100).toFixed(1) : '0';
               const taskDailyHours = (dailyAvailableHours * (task.hours / (totalAllocatedTaskHours || 1))).toFixed(1);
@@ -395,32 +376,21 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
                   key={task.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1.5fr 1fr 110px 36px',
+                    gridTemplateColumns: '1.5fr 1fr 130px',
                     alignItems: 'center',
                     gap: '0.75rem',
                     background: 'rgba(15, 23, 42, 0.8)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '8px',
-                    padding: '0.6rem 0.85rem',
+                    padding: '0.65rem 0.85rem',
                     transition: 'all 0.2s ease'
                   }}
                 >
                   {/* Task Name & Category */}
                   <div>
-                    <input 
-                      type="text" 
-                      value={task.name}
-                      onChange={(e) => handleTaskNameChange(task.id, e.target.value)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ffffff',
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        width: '100%',
-                        outline: 'none'
-                      }}
-                    />
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#ffffff' }}>
+                      {task.name}
+                    </div>
                     <span style={{ fontSize: '0.675rem', color: 'var(--text-dim)', display: 'block' }}>
                       Task #{index + 1} — {task.category}
                     </span>
@@ -429,55 +399,39 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
                   {/* Share indicator badge */}
                   <div style={{ textAlign: 'right', paddingRight: '0.5rem' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                      {taskSharePct}% share
+                      {taskSharePct}% Share
                     </span>
                     <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', display: 'block' }}>
                       ~{taskDailyHours} hrs/day
                     </span>
                   </div>
 
-                  {/* Numeric Input for Task Hours */}
-                  <div>
+                  {/* Numeric Input for Target Task Hours */}
+                  <div style={{ position: 'relative' }}>
                     <input 
                       type="number"
                       value={task.hours}
                       onChange={(e) => handleTaskHoursChange(task.id, Number(e.target.value))}
                       step={500}
                       min={0}
+                      title="Target Annual Task Workload Hours"
                       style={{
                         width: '100%',
                         background: 'rgba(10, 14, 23, 0.8)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        border: '1px solid rgba(0, 210, 255, 0.25)',
                         borderRadius: '6px',
-                        padding: '0.4rem 0.5rem',
+                        padding: '0.4rem 2.2rem 0.4rem 0.5rem',
                         fontSize: '0.875rem',
                         fontWeight: 700,
-                        color: '#ffffff',
+                        color: 'var(--accent-cyan)',
                         textAlign: 'right',
                         outline: 'none'
                       }}
                     />
+                    <span style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-dim)' }}>
+                      HRS
+                    </span>
                   </div>
-
-                  {/* Remove Button */}
-                  <button
-                    onClick={() => handleRemoveTask(task.id)}
-                    disabled={tasks.length <= 1}
-                    title="Remove Task"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: tasks.length <= 1 ? 'rgba(255,255,255,0.1)' : 'var(--text-dim)',
-                      cursor: tasks.length <= 1 ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0.3rem',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               );
             })}
