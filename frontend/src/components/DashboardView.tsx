@@ -16,6 +16,7 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
   const [selectedDept, setSelectedDept] = useState<string>('production');
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   if (!version) {
     return (
@@ -153,12 +154,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
           </div>
         </div>
 
-        {/* Actual Generated Graph Automation Dashboard Chart */}
-        {version.chart_urls?.[selectedDept] ? (
+        {/* Static Plot View with Image Fallback */}
+        {!imageErrors[selectedDept] ? (
           <div style={{ marginTop: '1.5rem', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
             <img 
-              src={getChartUrl(version.chart_urls[selectedDept])} 
+              src={getChartUrl(version.chart_urls?.[selectedDept] || `/media/charts/${selectedDept}_dashboard.png`)} 
               alt={`${selectedDept} Generated Dashboard Chart`} 
+              onError={() => setImageErrors(prev => ({ ...prev, [selectedDept]: true }))}
               style={{ width: '100%', maxHeight: '520px', objectFit: 'contain', borderRadius: '8px' }} 
             />
           </div>
