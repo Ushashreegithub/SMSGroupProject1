@@ -55,11 +55,21 @@ export interface AuthResponse {
   token: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `${window.location.origin}/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+}
 
 export function getChartUrl(url: string | undefined): string {
   if (!url) return '';
-  const backendOrigin = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  const apiBase = getApiBaseUrl();
+  const backendOrigin = apiBase.replace(/\/api\/v1\/?$/, '');
+
   if (url.startsWith('http://localhost:8000')) {
     const relativePath = url.replace('http://localhost:8000', '');
     return `${backendOrigin}${relativePath}`;
@@ -72,7 +82,8 @@ export function getChartUrl(url: string | undefined): string {
 
 export async function fetchPlanningVersions(): Promise<PlanningVersion[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/versions/`);
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/versions/`);
     if (!res.ok) throw new Error('Failed to fetch planning versions');
     return await res.json();
   } catch (error) {
@@ -83,7 +94,8 @@ export async function fetchPlanningVersions(): Promise<PlanningVersion[]> {
 
 export async function fetchLatestPlanningVersion(): Promise<PlanningVersion | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/versions/latest/`);
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/versions/latest/`);
     if (!res.ok) throw new Error('Failed to fetch latest version');
     return await res.json();
   } catch (error) {
@@ -94,7 +106,8 @@ export async function fetchLatestPlanningVersion(): Promise<PlanningVersion | nu
 
 export async function fetchBenchmarks(): Promise<BenchmarkItem[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/benchmarks/`);
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/benchmarks/`);
     if (!res.ok) throw new Error('Failed to fetch benchmarks');
     return await res.json();
   } catch (error) {
@@ -107,7 +120,8 @@ export async function uploadPlanningSpreadsheet(file: File): Promise<PlanningVer
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${API_BASE_URL}/versions/upload_planning/`, {
+  const apiBase = getApiBaseUrl();
+  const res = await fetch(`${apiBase}/versions/upload_planning/`, {
     method: 'POST',
     body: formData,
   });
@@ -120,9 +134,9 @@ export async function uploadPlanningSpreadsheet(file: File): Promise<PlanningVer
 }
 
 export async function loginUser(username: string, password: string): Promise<AuthUser> {
-  // Try backend auth API endpoint first
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/login/`, {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -138,19 +152,16 @@ export async function loginUser(username: string, password: string): Promise<Aut
       };
     }
     
-    // If backend explicit 401/400 returned, check if user matches fallback company accounts
     if (res.status === 401 || res.status === 400) {
       const errData = await res.json();
       throw new Error(errData.error || 'Invalid credentials');
     }
   } catch (err: any) {
-    // If network fetch failed or endpoint non-responsive, fall back to local client auth verification
     if (err.message && err.message !== 'Failed to fetch' && !err.message.includes('fetch')) {
       throw err;
     }
   }
 
-  // Local enterprise authentication fallback
   const cleanUsername = username.trim().toLowerCase();
   const cleanPassword = password.trim();
 
@@ -219,7 +230,8 @@ export async function calculateManualPlanning(
   tasks: Array<{ id: string; name: string; category?: string; hours: number }>
 ): Promise<ManualCalculationResponse | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/versions/calculate_manual_planning/`, {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/versions/calculate_manual_planning/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ annual_hours: annualHours, year, tasks })
@@ -231,5 +243,3 @@ export async function calculateManualPlanning(
     return null;
   }
 }
-
-
