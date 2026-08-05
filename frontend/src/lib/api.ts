@@ -123,65 +123,65 @@ export async function uploadPlanningSpreadsheet(file: File): Promise<PlanningVer
   return await res.json();
 }
 
-export async function loginUser(username: string, password: string): Promise<AuthUser> {
+export async function loginUser(
+  username: string,
+  password: string
+): Promise<{
+  user: AuthUser;
+  access: string;
+  refresh: string;
+}> {
+
+  const apiBase = getApiBaseUrl();
+
   try {
-    const apiBase = getApiBaseUrl();
     const res = await fetch(`${apiBase}/auth/login/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({
+        username,
+        password,
+      }),
     });
 
-    if (res.ok) {
-      const data: AuthResponse = await res.json();
-      return {
-        ...data.user,
-        token: data.token,
-      };
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Invalid credentials");
     }
-    
-    if (res.status === 401 || res.status === 400) {
-      const errData = await res.json();
-      throw new Error(errData.error || 'Invalid credentials');
-    }
+
+    return {
+      user: data.user,
+      access: data.access,
+      refresh: data.refresh,
+    };
+
   } catch (err: any) {
-    if (err.message && err.message !== 'Failed to fetch' && !err.message.includes('fetch')) {
-      throw err;
-    }
-  }
 
-  const cleanUsername = username.trim().toLowerCase();
-  const cleanPassword = password.trim();
+    // Offline fallback
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanPassword = password.trim();
 
-  if (!cleanUsername || !cleanPassword) {
-    throw new Error('Please enter both username and password.');
-  }
-
-  const validPasswords = ['smsgroup2026', 'admin', 'sms2026', 'password'];
-  
-  if (
-    cleanUsername === 'admin' ||
-    cleanUsername === 'planner@sms-group.com' ||
-    cleanUsername.endsWith('@sms-group.com')
-  ) {
-    if (validPasswords.includes(cleanPassword) || cleanPassword.length >= 4) {
-      const displayName = cleanUsername.includes('@') 
-        ? cleanUsername.split('@')[0].toUpperCase() 
-        : 'Enterprise Admin';
+    if (
+      cleanUsername === "admin" &&
+      cleanPassword === "smsgroup2026"
+    ) {
       return {
-        name: displayName === 'ADMIN' ? 'J. Smith' : displayName,
-        role: cleanUsername === 'admin' ? 'Plant Administrator' : 'Sr. Production Planner',
-        email: cleanUsername.includes('@') ? cleanUsername : `${cleanUsername}@sms-group.com`,
-        token: `sms_local_token_${Date.now()}`
+        user: {
+          name: "Plant Administrator",
+          role: "Plant Administrator",
+          email: "admin@sms-group.com",
+        },
+        access: "offline_access_token",
+        refresh: "offline_refresh_token",
       };
     }
+
+    throw err;
   }
-
-  throw new Error('Invalid username or password. Check company credentials.');
 }
-
 export interface CalculatedTaskItem {
   id: string;
   name: string;

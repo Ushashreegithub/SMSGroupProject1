@@ -21,8 +21,8 @@ interface LoginViewProps {
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('smsgroup2026');
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,18 +124,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
 
-          <div className="credentials-hint">
-            <KeyRound size={15} />
-
-            <div>
-              <strong>Internal Credentials:</strong>
-
-              <span>
-                Username: <code>admin</code> | Password:
-                <code> smsgroup2026</code>
-              </span>
-            </div>
-          </div>
 
           <button
             type="submit"

@@ -182,7 +182,8 @@ export default function Home() {
     console.warn("LocalStorage remove failed:", e);
   }
 
-  window.location.href = "/login";
+  window.location.href = "/";
+  
 };
 
   const handleUploadSuccess = (newVersion: PlanningVersion) => {
