@@ -67,8 +67,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
         </div>
       )}
 
-      {/* SMS Group Manual Entry Component */}
-      <ManualInputPanel />
 
       {/* Metrics Row */}
       <div className="metrics-grid">

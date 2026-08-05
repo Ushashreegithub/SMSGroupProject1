@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { DashboardView } from '../components/DashboardView';
 import { UploadView } from '../components/UploadView';
+import { CapacityPlanningView } from "../components/CapacityPlanningView";
 import { HistoryView } from '../components/HistoryView';
 import { BenchmarksView } from '../components/BenchmarksView';
 import { LoginView } from '../components/LoginView';
@@ -89,23 +90,27 @@ export default function Home() {
   const [benchmarks, setBenchmarks] = useState<BenchmarkItem[]>([]);
   const [apiConnected, setApiConnected] = useState<boolean>(false);
 
-  // Check saved session on mount
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('sms_user');
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.name) {
-          setCurrentUser(parsed);
-          setIsAuthenticated(true);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to parse saved session:', e);
-    } finally {
-      setIsInitializing(false);
+  try {
+    const access = localStorage.getItem("access");
+    const refresh = localStorage.getItem("refresh");
+    const savedUser = localStorage.getItem("sms_user");
+
+    if (access && refresh && savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setCurrentUser(parsed);
+      setIsAuthenticated(true);
+    } else {
+      setCurrentUser(null);
+      setIsAuthenticated(false);
     }
-  }, []);
+  } catch (e) {
+    console.warn("Failed to restore session:", e);
+    localStorage.clear();
+  } finally {
+    setIsInitializing(false);
+  }
+}, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -144,25 +149,41 @@ export default function Home() {
     loadInitialData();
   }, [isAuthenticated]);
 
-  const handleLoginSuccess = (user: AuthUser) => {
-    setCurrentUser(user);
-    setIsAuthenticated(true);
-    try {
-      localStorage.setItem('sms_user', JSON.stringify(user));
-    } catch (e) {
-      console.warn('LocalStorage save failed:', e);
-    }
-  };
+  const handleLoginSuccess = (
+  user: AuthUser,
+  access: string,
+  refresh: string
+) => {
+  setCurrentUser(user);
+  setIsAuthenticated(true);
+
+  try {
+    localStorage.setItem("access", access);
+    localStorage.setItem("refresh", refresh);
+    localStorage.setItem("sms_user", JSON.stringify(user));
+  } catch (e) {
+    console.warn("LocalStorage save failed:", e);
+  }
+};
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    try {
-      localStorage.removeItem('sms_user');
-    } catch (e) {
-      console.warn('LocalStorage remove failed:', e);
-    }
-  };
+  setIsAuthenticated(false);
+  setCurrentUser(null);
+
+  try {
+    // Remove JWT tokens
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+
+    // Remove user information
+    localStorage.removeItem("sms_user");
+
+  } catch (e) {
+    console.warn("LocalStorage remove failed:", e);
+  }
+
+  window.location.href = "/login";
+};
 
   const handleUploadSuccess = (newVersion: PlanningVersion) => {
     setVersions(prev => [newVersion, ...prev]);
@@ -231,6 +252,10 @@ export default function Home() {
 
         {currentView === 'upload' && (
           <UploadView onUploadSuccess={handleUploadSuccess} />
+        )}
+
+        {currentView === "capacity-planning" && (
+          <CapacityPlanningView />
         )}
 
         {currentView === 'history' && (

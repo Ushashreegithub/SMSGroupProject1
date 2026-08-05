@@ -50,9 +50,9 @@ export interface AuthUser {
 }
 
 export interface AuthResponse {
-  success: boolean;
+  access: string;
+  refresh: string;
   user: AuthUser;
-  token: string;
 }
 
 export function getApiBaseUrl(): string {

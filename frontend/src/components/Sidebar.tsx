@@ -4,6 +4,7 @@ import { AuthUser } from '../lib/api';
 import { 
   LayoutDashboard, 
   UploadCloud, 
+  Calculator,
   History, 
   BarChart3, 
   ShieldCheck,
@@ -28,6 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload', label: 'Upload Planning', icon: UploadCloud },
+    { id: 'capacity-planning', label: 'Capacity Planning', icon: Calculator },
+
     { id: 'history', label: 'Version History', icon: History },
     { id: 'benchmarks', label: 'Benchmarks', icon: BarChart3 },
   ];
