@@ -34,3 +34,14 @@ class Benchmark(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ManualInputConfig(models.Model):
+    user_key = models.CharField(max_length=64, default="default_user", unique=True)
+    year = models.IntegerField(default=2026)
+    tasks = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"ManualInputConfig ({self.year})"
+

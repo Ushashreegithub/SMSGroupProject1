@@ -233,3 +233,30 @@ export async function calculateManualPlanning(
     return null;
   }
 }
+
+export async function fetchManualConfig(): Promise<{ year: number; tasks: any[] } | null> {
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/versions/get_manual_config/`);
+    if (!res.ok) throw new Error('Failed to fetch manual config');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching manual config:', err);
+    return null;
+  }
+}
+
+export async function saveManualConfig(year: number, tasks: any[]): Promise<boolean> {
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/versions/save_manual_config/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, tasks })
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('API error saving manual config:', err);
+    return false;
+  }
+}
