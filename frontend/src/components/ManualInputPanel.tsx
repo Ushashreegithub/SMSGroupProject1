@@ -3,7 +3,6 @@ import {
   Clock, 
   Layers, 
   Save, 
-  RotateCcw, 
   CheckCircle, 
   Plus, 
   Trash2, 
@@ -14,7 +13,12 @@ import {
   ArrowRight,
   PieChart
 } from 'lucide-react';
-import { calculateManualPlanning, ManualCalculationResponse } from '../lib/api';
+import { 
+  calculateManualPlanning, 
+  fetchManualConfig, 
+  saveManualConfig, 
+  ManualCalculationResponse 
+} from '../lib/api';
 
 export interface DepartmentTaskInput {
   id: string;
@@ -36,12 +40,65 @@ export interface ManualInputPanelProps {
 }
 
 export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChange }) => {
-  const [annualHours, setAnnualHours] = useState<number>(120000);
+  const initialTotalTaskHours = INITIAL_TASKS.reduce((sum, t) => sum + t.hours, 0);
+  const [annualHours, setAnnualHours] = useState<number>(initialTotalTaskHours);
   const [year, setYear] = useState<number>(2026);
   const [tasks, setTasks] = useState<DepartmentTaskInput[]>(INITIAL_TASKS);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [calculationResult, setCalculationResult] = useState<ManualCalculationResponse | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
+
+  // 1. Initial Load: Load saved inputs from localStorage & Database API
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Check localStorage first for instant rendering
+    const localSaved = localStorage.getItem('sms_capacity_planning_config');
+    if (localSaved) {
+      try {
+        const parsed = JSON.parse(localSaved);
+        if (parsed.tasks && parsed.tasks.length > 0) {
+          setTasks(parsed.tasks);
+          const total = parsed.tasks.reduce((sum: number, t: any) => sum + (Number(t.hours) || 0), 0);
+          setAnnualHours(total);
+        }
+        if (parsed.year) setYear(parsed.year);
+      } catch (e) {
+        console.warn('Error reading local storage capacity config:', e);
+      }
+    }
+
+    // Fetch latest configuration from Django Database
+    async function loadDbConfig() {
+      const dbConfig = await fetchManualConfig();
+      if (isMounted && dbConfig && dbConfig.tasks && dbConfig.tasks.length > 0) {
+        setTasks(dbConfig.tasks);
+        setYear(dbConfig.year || 2026);
+        const total = dbConfig.tasks.reduce((sum: number, t: any) => sum + (Number(t.hours) || 0), 0);
+        setAnnualHours(total);
+      }
+    }
+
+    loadDbConfig();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Helper to persist to both localStorage and database API
+  const persistConfig = (updatedYear: number, updatedTasks: DepartmentTaskInput[]) => {
+    localStorage.setItem('sms_capacity_planning_config', JSON.stringify({
+      year: updatedYear,
+      tasks: updatedTasks
+    }));
+    saveManualConfig(updatedYear, updatedTasks);
+  };
+
+  // Sync annualHours whenever task inputs change
+  useEffect(() => {
+    const totalTaskHours = tasks.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
+    if (totalTaskHours !== annualHours) {
+      setAnnualHours(totalTaskHours);
+    }
+  }, [tasks]);
 
   // Trigger backend calculation when inputs change
   useEffect(() => {
@@ -49,30 +106,38 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
     async function runCalc() {
       setIsCalculating(true);
       try {
-        const res = await calculateManualPlanning(annualHours, year, tasks);
+        const totalTaskHours = tasks.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
+        const effectiveAnnualHours = tasks.length > 0 && totalTaskHours > 0 ? totalTaskHours : annualHours;
+        
+        const res = await calculateManualPlanning(effectiveAnnualHours, year, tasks);
         if (isMounted) {
           if (res) {
             setCalculationResult(res);
           } else {
-            // Local fallback logic if backend connection is unavailable
+            // Local fallback logic
             const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
             const totalDaysInYear = isLeap ? 366 : 365;
-            const dailyAvailableHours = annualHours / totalDaysInYear;
+            const dailyAvailableHours = effectiveAnnualHours / totalDaysInYear;
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             const daysPerMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-            const totalTaskWeight = tasks.reduce((s, t) => s + (Number(t.hours) || 0), 0);
 
             const monthlyCalculations = monthNames.map((mName, idx) => {
               const dInMonth = daysPerMonth[idx];
-              const monthlyAvl = dailyAvailableHours * dInMonth;
+              let monthlyAvl = 0;
+
               const taskBreakdown = tasks.map(t => {
-                const ratio = totalTaskWeight > 0 ? (t.hours / totalTaskWeight) : (1 / (tasks.length || 1));
+                const taskHoursInput = Number(t.hours) || 0;
+                const taskDailyHours = taskHoursInput / totalDaysInYear;
+                const taskMonthlyHours = taskDailyHours * dInMonth;
+                monthlyAvl += taskMonthlyHours;
+
+                const ratio = totalTaskHours > 0 ? (taskHoursInput / totalTaskHours) : (1 / (tasks.length || 1));
                 return {
                   id: t.id,
                   name: t.name,
                   category: t.category,
-                  monthly_hours: Math.round(monthlyAvl * ratio * 100) / 100,
-                  daily_hours: Math.round(dailyAvailableHours * ratio * 100) / 100,
+                  monthly_hours: Math.round(taskMonthlyHours * 100) / 100,
+                  daily_hours: Math.round(taskDailyHours * 100) / 100,
                   days_in_month: dInMonth,
                   share_pct: Math.round(ratio * 10000) / 100
                 };
@@ -91,7 +156,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
             setCalculationResult({
               status: 'local_fallback',
               inputs: {
-                annual_hours: annualHours,
+                annual_hours: effectiveAnnualHours,
                 year: year,
                 is_leap_year: isLeap,
                 total_days_in_year: totalDaysInYear,
@@ -113,21 +178,25 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
     return () => { isMounted = false; };
   }, [annualHours, year, tasks]);
 
-  const handleAnnualHoursChange = (val: number) => {
-    const newHours = Math.max(0, val);
-    setAnnualHours(newHours);
-    if (onInputsChange) onInputsChange(newHours, tasks);
+  const handleYearChange = (newYear: number) => {
+    setYear(newYear);
+    persistConfig(newYear, tasks);
+    if (onInputsChange) onInputsChange(annualHours, tasks);
   };
 
   const handleTaskHoursChange = (id: string, val: number) => {
     const updated = tasks.map(t => t.id === id ? { ...t, hours: Math.max(0, val) } : t);
+    const newTotal = updated.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
     setTasks(updated);
-    if (onInputsChange) onInputsChange(annualHours, updated);
+    setAnnualHours(newTotal);
+    persistConfig(year, updated);
+    if (onInputsChange) onInputsChange(newTotal, updated);
   };
 
   const handleTaskNameChange = (id: string, newName: string) => {
     const updated = tasks.map(t => t.id === id ? { ...t, name: newName } : t);
     setTasks(updated);
+    persistConfig(year, updated);
     if (onInputsChange) onInputsChange(annualHours, updated);
   };
 
@@ -140,34 +209,32 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
       hours: 5000
     };
     const updated = [...tasks, newTask];
+    const newTotal = updated.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
     setTasks(updated);
-    if (onInputsChange) onInputsChange(annualHours, updated);
+    setAnnualHours(newTotal);
+    persistConfig(year, updated);
+    if (onInputsChange) onInputsChange(newTotal, updated);
   };
 
   const handleRemoveTask = (id: string) => {
     if (tasks.length <= 1) return;
     const updated = tasks.filter(t => t.id !== id);
+    const newTotal = updated.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
     setTasks(updated);
-    if (onInputsChange) onInputsChange(annualHours, updated);
+    setAnnualHours(newTotal);
+    persistConfig(year, updated);
+    if (onInputsChange) onInputsChange(newTotal, updated);
   };
 
-  const handleReset = () => {
-    setAnnualHours(120000);
-    setYear(2026);
-    setTasks(INITIAL_TASKS);
-    setSaveStatus('idle');
-    if (onInputsChange) onInputsChange(120000, INITIAL_TASKS);
-  };
-
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaveStatus('saving');
+    await saveManualConfig(year, tasks);
+    localStorage.setItem('sms_capacity_planning_config', JSON.stringify({ year, tasks }));
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 3000);
   };
 
   const totalAllocatedTaskHours = tasks.reduce((sum, task) => sum + (Number(task.hours) || 0), 0);
-  const utilizationPct = annualHours > 0 ? Math.round((totalAllocatedTaskHours / annualHours) * 100) : 0;
-  const isOverAllocated = totalAllocatedTaskHours > annualHours;
-
   const inputsSummary = calculationResult?.inputs;
   const dailyAvailableHours = inputsSummary?.daily_available_hours ?? (annualHours / 365);
   const daysInYear = inputsSummary?.total_days_in_year ?? 365;
@@ -201,15 +268,6 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button 
-            onClick={handleReset}
-            className="header-logout-btn"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            <RotateCcw size={14} />
-            Reset Defaults
-          </button>
-
-          <button 
             onClick={handleSave}
             style={{
               display: 'flex',
@@ -228,108 +286,80 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
             }}
           >
             {saveStatus === 'saved' ? <CheckCircle size={16} /> : <Save size={16} />}
-            {saveStatus === 'saved' ? 'Inputs Saved!' : 'Save Manual Inputs'}
+            {saveStatus === 'saved' ? 'Saved to Database!' : saveStatus === 'saving' ? 'Saving...' : 'Save Manual Inputs'}
           </button>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
         
-        {/* Component 1: Annual Hours Input */}
-        <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(10, 16, 30, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <div style={{ padding: '0.4rem', background: 'rgba(0, 210, 255, 0.1)', borderRadius: '8px' }}>
-              <Clock size={20} color="var(--accent-cyan)" />
+        {/* Component 1: Annual Hours Summary (Derived from 5 Tasks) */}
+        <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(10, 16, 30, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div style={{ padding: '0.4rem', background: 'rgba(0, 210, 255, 0.1)', borderRadius: '8px' }}>
+                <Clock size={20} color="var(--accent-cyan)" />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>1. Annual Hours Output</h4>
+                <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Total Plant Capacity (Sum of Tasks)</span>
+              </div>
             </div>
-            <div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>1. Annual Hours Input</h4>
-              <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>Plant Available Capacity</span>
-            </div>
-          </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.775rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-              TOTAL AVAILABLE ANNUAL HOURS (HRS / YEAR)
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input 
-                type="number"
-                value={annualHours}
-                onChange={(e) => handleAnnualHoursChange(Number(e.target.value))}
-                step={1000}
-                min={0}
-                style={{
-                  width: '100%',
-                  background: 'rgba(15, 23, 42, 0.9)',
-                  border: '1px solid rgba(0, 210, 255, 0.4)',
-                  borderRadius: '8px',
-                  padding: '0.75rem 1rem',
-                  fontSize: '1.35rem',
-                  fontWeight: 800,
-                  color: 'var(--accent-cyan)',
-                  outline: 'none',
-                  boxShadow: '0 0 15px rgba(0, 210, 255, 0.1)'
-                }}
-              />
-              <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-dim)' }}>
-                HRS
+            {/* Read-Only Calculated Annual Hours Display */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.775rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                TOTAL AVAILABLE ANNUAL HOURS (HRS / YEAR)
+              </label>
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.9)',
+                border: '1px solid rgba(0, 210, 255, 0.35)',
+                borderRadius: '8px',
+                padding: '0.85rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 0 15px rgba(0, 210, 255, 0.1)'
+              }}>
+                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                  {annualHours.toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  HRS / YEAR
+                </span>
+              </div>
+              <span style={{ fontSize: '0.675rem', color: 'var(--text-dim)', marginTop: '0.35rem', display: 'block' }}>
+                Automatically calculated as the sum of the 5 task inputs below
               </span>
             </div>
-          </div>
 
-          {/* Planning Year Selection */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-              TARGET PLANNING YEAR
-            </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {[2026, 2027, 2028].map(y => (
-                <button
-                  key={y}
-                  onClick={() => setYear(y)}
-                  style={{
-                    flex: 1,
-                    background: year === y ? 'rgba(0, 210, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${year === y ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                    color: year === y ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    padding: '0.35rem',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {y} {(y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? '(Leap 366d)' : '(365d)'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick presets */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
-              QUICK CAPACITY PRESETS
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem' }}>
-              {[100000, 120000, 150000].map(hrs => (
-                <button
-                  key={hrs}
-                  onClick={() => handleAnnualHoursChange(hrs)}
-                  style={{
-                    background: annualHours === hrs ? 'rgba(0, 210, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                    border: `1px solid ${annualHours === hrs ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                    color: annualHours === hrs ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    padding: '0.35rem 0.5rem',
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {(hrs / 1000)}k hrs
-                </button>
-              ))}
+            {/* Planning Year Selection */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                TARGET PLANNING YEAR
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {[2026, 2027, 2028].map(y => (
+                  <button
+                    key={y}
+                    onClick={() => handleYearChange(y)}
+                    style={{
+                      flex: 1,
+                      background: year === y ? 'rgba(0, 210, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                      border: `1px solid ${year === y ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                      color: year === y ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                      padding: '0.4rem 0.25rem',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {y} {(y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? '(366d)' : '(365d)'}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -447,7 +477,6 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
             </span>
           </div>
         </div>
-
       </div>
 
       {/* Dynamic 12-Month Calculated Workload Matrix */}
@@ -461,7 +490,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
               </h4>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <span><strong>Formula:</strong> 1-Day Avl ({dailyAvailableHours.toFixed(2)} hrs) × Days in Month × Task Share</span>
+              <span style={{ background: 'rgba(0, 210, 255, 0.08)', padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(0, 210, 255, 0.2)', color: 'var(--accent-cyan)' }}>
+                <strong>Task-Based Formula:</strong> Task Daily Hours (Annual Task Hrs ÷ {daysInYear}d) × Days in Month
+              </span>
               {isCalculating && <span className="spinner-sm" />}
             </div>
           </div>
@@ -471,14 +502,30 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({ onInputsChan
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: 'rgba(255, 255, 255, 0.05)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700 }}>MONTH</th>
-                  <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700, textAlign: 'center' }}>DAYS</th>
-                  <th style={{ padding: '0.65rem 0.85rem', fontWeight: 700, textAlign: 'right' }}>MONTHLY AVL (HRS)</th>
-                  {tasks.map(t => (
-                    <th key={t.id} style={{ padding: '0.65rem 0.85rem', fontWeight: 700, textAlign: 'right', color: 'var(--accent-cyan)' }}>
-                      {t.name.toUpperCase()} (HRS)
-                    </th>
-                  ))}
+                  <th style={{ padding: '0.75rem 0.85rem', fontWeight: 700, verticalAlign: 'bottom' }}>
+                    MONTH
+                  </th>
+                  <th style={{ padding: '0.75rem 0.85rem', fontWeight: 700, textAlign: 'center', verticalAlign: 'bottom' }}>
+                    DAYS
+                  </th>
+                  <th style={{ padding: '0.75rem 0.85rem', fontWeight: 700, textAlign: 'right', verticalAlign: 'bottom' }}>
+                    <div>MONTHLY AVL (HRS)</div>
+                    <div style={{ fontSize: '0.675rem', color: 'var(--accent-emerald)', fontWeight: 600 }}>
+                      Plant: {dailyAvailableHours.toFixed(2)} hrs/day
+                    </div>
+                  </th>
+                  {tasks.map(t => {
+                    const taskHoursInput = Number(t.hours) || 0;
+                    const taskDailyHours = (taskHoursInput / daysInYear).toFixed(2);
+                    return (
+                      <th key={t.id} style={{ padding: '0.75rem 0.85rem', fontWeight: 700, textAlign: 'right', color: 'var(--accent-cyan)', verticalAlign: 'bottom' }}>
+                        <div>{t.name.toUpperCase()} (HRS)</div>
+                        <div style={{ fontSize: '0.675rem', color: 'var(--text-dim)', fontWeight: 600, marginTop: '0.15rem' }}>
+                          1-Day: {taskDailyHours} hrs/day
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>

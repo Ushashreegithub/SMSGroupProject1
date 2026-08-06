@@ -6,7 +6,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .models import PlanningVersion, Benchmark
+from .models import PlanningVersion, Benchmark, ManualInputConfig
 from .serializers import PlanningVersionSerializer, BenchmarkSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -225,7 +225,6 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def calculate_manual_planning(self, request):
         import calendar
-        annual_hours = float(request.data.get('annual_hours', 120000))
         year = int(request.data.get('year', 2026))
         tasks = request.data.get('tasks', [])
         
@@ -233,34 +232,40 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
         is_leap = calendar.isleap(year)
         total_days_in_year = 366 if is_leap else 365
         
-        # 2. 1 day's available hours
+        # 2. Total annual hours equals sum of task inputs (if tasks provided)
+        total_task_weight = sum(float(t.get('hours', 0)) for t in tasks)
+        if tasks and total_task_weight > 0:
+            annual_hours = total_task_weight
+        else:
+            annual_hours = float(request.data.get('annual_hours', 120000))
+        
+        # 3. 1 day's plant available hours (Annual / Days in Year)
         daily_available_hours = annual_hours / total_days_in_year
         
-        # 3. Monthly available hours for each month (Jan - Dec)
+        # 4. Monthly available hours for each month (Jan - Dec)
         month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        total_task_weight = sum(float(t.get('hours', 0)) for t in tasks)
         
         monthly_summary = []
         for month_num in range(1, 13):
             m_name = month_names[month_num - 1]
             days_in_month = calendar.monthrange(year, month_num)[1]
             
-            # 1 day's available hours * days in month
-            monthly_avl_hours = daily_available_hours * days_in_month
-            
-            # Split hours of each month based on tasks
+            # Split hours of each month based on each task's daily capacity
             task_breakdown = []
+            monthly_avl_hours = 0.0
+            
             for task in tasks:
                 task_id = task.get('id', task.get('name'))
                 task_hours_input = float(task.get('hours', 0))
                 
-                if total_task_weight > 0:
-                    ratio = task_hours_input / total_task_weight
-                else:
-                    ratio = 1.0 / len(tasks) if len(tasks) > 0 else 0
-                    
-                task_monthly_hours = monthly_avl_hours * ratio
-                task_daily_hours = daily_available_hours * ratio
+                # Each task's 1-day capacity = Task Annual Hours / Days in Year
+                task_daily_hours = task_hours_input / total_days_in_year
+                
+                # Each task's Monthly Hours = Task 1-Day Capacity * Days in Month
+                task_monthly_hours = task_daily_hours * days_in_month
+                monthly_avl_hours += task_monthly_hours
+                
+                ratio = (task_hours_input / total_task_weight) if total_task_weight > 0 else (1.0 / len(tasks) if len(tasks) > 0 else 0)
                 
                 task_breakdown.append({
                     "id": task_id,
@@ -292,6 +297,42 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
                 "total_tasks_count": len(tasks)
             },
             "monthly_calculations": monthly_summary
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def get_manual_config(self, request):
+        config, created = ManualInputConfig.objects.get_or_create(
+            user_key="default_user",
+            defaults={
+                "year": 2026,
+                "tasks": [
+                    { "id": "welding", "name": "Welding", "category": "Heavy Fabrication", "hours": 25000 },
+                    { "id": "machining", "name": "Machining", "category": "Precision Turning & Milling", "hours": 32000 },
+                    { "id": "assembly", "name": "Assembly", "category": "Plant Equipment Assembly", "hours": 22000 },
+                    { "id": "rr", "name": "Roll Repair (R&R)", "category": "Refurbishment & Reconditioning", "hours": 18000 },
+                    { "id": "plating", "name": "Plating", "category": "Surface Treatment & Chrome", "hours": 15000 }
+                ]
+            }
+        )
+        return Response({
+            "status": "success",
+            "year": config.year,
+            "tasks": config.tasks
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def save_manual_config(self, request):
+        year = int(request.data.get('year', 2026))
+        tasks = request.data.get('tasks', [])
+        config, _ = ManualInputConfig.objects.get_or_create(user_key="default_user")
+        config.year = year
+        config.tasks = tasks
+        config.save()
+        return Response({
+            "status": "success",
+            "message": "Manual capacity configuration saved successfully.",
+            "year": config.year,
+            "tasks": config.tasks
         }, status=status.HTTP_200_OK)
 
 
