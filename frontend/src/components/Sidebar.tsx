@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Cpu,
   LogOut,
+  FileBarChart2,
   UserCheck
 } from 'lucide-react';
 
@@ -30,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload', label: 'Upload Planning', icon: UploadCloud },
     { id: 'capacity-planning', label: 'Capacity Planning', icon: Calculator },
-
+    { id: "summary", label: "Summary", icon: FileBarChart2 },
     { id: 'history', label: 'Version History', icon: History },
     { id: 'benchmarks', label: 'Benchmarks', icon: BarChart3 },
   ];
