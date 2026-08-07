@@ -8,6 +8,7 @@ import { CapacityPlanningView } from "../components/CapacityPlanningView";
 import { SummaryView } from "../components/SummaryView";
 import { HistoryView } from '../components/HistoryView';
 import { BenchmarksView } from '../components/BenchmarksView';
+import { ProjectPlanningView } from '../components/ProjectPlanningView';
 import { LoginView } from '../components/LoginView';
 import { SmsGroupLogo } from '../components/SmsGroupLogo';
 import { 
@@ -15,6 +16,7 @@ import {
   fetchLatestPlanningVersion, 
   fetchBenchmarks, 
   PlanningVersion, 
+  ManualCalculationResponse,
   BenchmarkItem,
   AuthUser
 } from '../lib/api';
@@ -90,6 +92,7 @@ export default function Home() {
   const [selectedVersion, setSelectedVersion] = useState<PlanningVersion | null>(null);
   const [benchmarks, setBenchmarks] = useState<BenchmarkItem[]>([]);
   const [apiConnected, setApiConnected] = useState<boolean>(false);
+  const [manualCalculationResult, setManualCalculationResult] = useState<ManualCalculationResponse | null>(null);
 
   useEffect(() => {
   try {
@@ -257,11 +260,15 @@ export default function Home() {
         )}
 
         {currentView === "capacity-planning" && (
-          <CapacityPlanningView />
+          <CapacityPlanningView onCalculationResultChange={setManualCalculationResult} />
+        )}
+
+        {currentView === "project-planning" && (
+          <ProjectPlanningView />
         )}
 
         {currentView === "summary" && (
-          <SummaryView />
+          <SummaryView calculationResult={manualCalculationResult} />
         )}
 
         {currentView === 'history' && (

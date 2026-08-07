@@ -1,10 +1,21 @@
 import React from "react";
 import { ManualInputPanel } from "./ManualInputPanel";
+import { ManualCalculationResponse } from "../lib/api";
 
-export const CapacityPlanningView: React.FC = () => {
+interface CapacityPlanningViewProps {
+  onCalculationResultChange?: (
+    result: ManualCalculationResponse | null
+  ) => void;
+}
+
+export const CapacityPlanningView: React.FC<CapacityPlanningViewProps> = ({
+  onCalculationResultChange,
+}) => {
   return (
     <div>
-      <ManualInputPanel />
+      <ManualInputPanel
+        onCalculationResultChange={onCalculationResultChange}
+      />
     </div>
   );
 };
