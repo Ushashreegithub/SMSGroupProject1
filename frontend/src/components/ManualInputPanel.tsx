@@ -13,6 +13,7 @@ import {
   saveManualConfig,
   ManualCalculationResponse,
 } from "../lib/api";
+import { MonthlyTaskBreakdown } from "./MonthlyTaskBreakdown";
 
 export interface DepartmentTaskInput {
   id: string;
@@ -1259,6 +1260,11 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
               updated
             </span>
           )}
+      </div>
+
+      {/* MONTHLY TASK BREAKDOWN (TABLE 3) */}
+      <div style={{ marginTop: "1.5rem" }}>
+        <MonthlyTaskBreakdown calculationResult={calculationResult} />
       </div>
     </div>
   );
