@@ -36,7 +36,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         <CapacityAlerts />
       </div>
 
-      {/* Monthly calculated breakdown will be added here */}
+      <MonthlyTaskBreakdown calculationResult={calculationResult} />
 
       <PlanningInsights />
 

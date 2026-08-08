@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   FolderKanban,
@@ -13,12 +13,16 @@ import {
   Save,
   FileText,
   Hash,
+  Wrench,
+  Scale,
 } from 'lucide-react';
 
 interface Project {
   id: string;
   projectName: string;
   projectNumber: string;
+  equipmentName: string;
+  equipmentWeight: string;
   description: string;
   startDate: string;
   endDate: string;
@@ -47,9 +51,22 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
   const [projects, setProjects] = useState<Project[]>([]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sms_project_planning');
+      if (saved) {
+        setProjects(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load saved projects', e);
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
     projectName: '',
     projectNumber: '',
+    equipmentName: '',
+    equipmentWeight: '',
     description: '',
     startDate: '',
     endDate: '',
@@ -108,6 +125,8 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     setFormData({
       projectName: '',
       projectNumber: '',
+      equipmentName: '',
+      equipmentWeight: '',
       description: '',
       startDate: '',
       endDate: '',
@@ -157,7 +176,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
     // Validate dates
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
-      setSaveMessage('End Date cannot be earlier than Start Date.');
+      setSaveMessage('CDD cannot be earlier than Zero Date.');
       return;
     }
 
@@ -166,6 +185,8 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
       projectName: formData.projectName,
       projectNumber: formData.projectNumber,
+      equipmentName: formData.equipmentName,
+      equipmentWeight: formData.equipmentWeight,
       description: formData.description,
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -353,7 +374,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* ROW 1 */}
+            {/* ROW 1 - PROJECT NAME & NUMBER */}
             <div
               style={{
                 display: 'grid',
@@ -397,6 +418,52 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               </div>
             </div>
 
+            {/* ROW 2 - EQUIPMENT NAME & EQUIPMENT WEIGHT */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                marginBottom: '1rem',
+              }}
+            >
+              {/* EQUIPMENT NAME */}
+              <div>
+                <label className="project-form-label">
+                  <Wrench size={14} />
+                  Equipment Name
+                </label>
+
+                <input
+                  type="text"
+                  name="equipmentName"
+                  value={formData.equipmentName}
+                  onChange={handleChange}
+                  placeholder="Enter equipment name"
+                  className="project-form-input"
+                />
+              </div>
+
+              {/* EQUIPMENT WEIGHT */}
+              <div>
+                <label className="project-form-label">
+                  <Scale size={14} />
+                  Equipment Weight (in kg)
+                </label>
+
+                <input
+                  type="number"
+                  name="equipmentWeight"
+                  value={formData.equipmentWeight}
+                  onChange={handleChange}
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 15000"
+                  className="project-form-input"
+                />
+              </div>
+            </div>
+
             {/* DESCRIPTION */}
             <div style={{ marginBottom: '1rem' }}>
               <label className="project-form-label">
@@ -418,7 +485,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               />
             </div>
 
-            {/* ROW 2 - DATES */}
+            {/* ROW 3 - DATES (ZERO DATE & CDD) */}
             <div
               style={{
                 display: 'grid',
@@ -427,11 +494,11 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 marginBottom: '1rem',
               }}
             >
-              {/* START DATE */}
+              {/* ZERO DATE */}
               <div>
                 <label className="project-form-label">
                   <Calendar size={14} />
-                  Start Date *
+                  Zero Date *
                 </label>
 
                 <input
@@ -443,11 +510,11 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 />
               </div>
 
-              {/* END DATE */}
+              {/* CDD */}
               <div>
                 <label className="project-form-label">
                   <Calendar size={14} />
-                  End Date *
+                  CDD *
                 </label>
 
                 <input
@@ -460,7 +527,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               </div>
             </div>
 
-            {/* ROW 3 - MANAGER + TASK */}
+            {/* ROW 4 - MANAGER + TASK */}
             <div
               style={{
                 display: 'grid',
@@ -641,7 +708,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               </div>
             )}
 
-            {/* ROW 4 */}
+            {/* ROW 5 */}
             <div
               style={{
                 display: 'grid',
@@ -901,13 +968,15 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               >
                 <th style={tableHeaderStyle}>Project</th>
                 <th style={tableHeaderStyle}>Project ID</th>
+                <th style={tableHeaderStyle}>Equipment</th>
+                <th style={tableHeaderStyle}>Weight (kg)</th>
                 <th style={tableHeaderStyle}>Manager</th>
                 <th style={tableHeaderStyle}>Task</th>
                 <th style={tableHeaderStyle}>Location</th>
                 <th style={tableHeaderStyle}>SMI</th>
                 <th style={tableHeaderStyle}>Labour Supply</th>
                 <th style={tableHeaderStyle}>Job Contractor</th>
-                <th style={tableHeaderStyle}>Dates</th>
+                <th style={tableHeaderStyle}>Zero Date / CDD</th>
                 <th style={tableHeaderStyle}>Hours</th>
                 <th style={tableHeaderStyle}>Priority</th>
                 <th style={tableHeaderStyle}>Status</th>
@@ -948,6 +1017,18 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                     {project.projectNumber}
                   </td>
 
+                  {/* EQUIPMENT NAME */}
+                  <td style={tableCellStyle}>
+                    {project.equipmentName || '—'}
+                  </td>
+
+                  {/* EQUIPMENT WEIGHT */}
+                  <td style={tableCellStyle}>
+                    {project.equipmentWeight
+                      ? `${Number(project.equipmentWeight).toLocaleString()} kg`
+                      : '—'}
+                  </td>
+
                   {/* MANAGER */}
                   <td style={tableCellStyle}>
                     {project.projectManager}
@@ -980,11 +1061,14 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
                   {/* DATES */}
                   <td style={tableCellStyle}>
-                    {project.startDate}
-                    <br />
-                    <span style={{ color: 'var(--text-dim)' }}>
-                      → {project.endDate}
-                    </span>
+                    <div>
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Zero: </span>
+                      {project.startDate || '—'}
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>CDD: </span>
+                      {project.endDate || '—'}
+                    </div>
                   </td>
 
                   {/* HOURS */}
