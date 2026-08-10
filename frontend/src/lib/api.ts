@@ -260,3 +260,109 @@ export async function saveManualConfig(year: number, tasks: any[]): Promise<bool
     return false;
   }
 }
+
+export interface ProjectTaskMonthlyDistribution {
+  id?: number;
+  month_index: number;
+  month_label: string;
+  date?: string;
+  hours: number;
+  percentage: number;
+}
+
+export interface ProjectTask {
+  id?: number;
+  task_name: string;
+  task_code: string;
+  allocated_hours: number;
+  duration_months: number;
+  start_date?: string;
+  location?: string;
+  smi?: string;
+  labour_supply?: string;
+  job_contractor?: string;
+  monthly_distributions?: ProjectTaskMonthlyDistribution[];
+}
+
+export interface BackendProject {
+  id?: number;
+  project_name: string;
+  project_number: string;
+  equipment_name?: string;
+  equipment_weight?: string;
+  description?: string;
+  zero_date?: string;
+  cdd?: string;
+  project_manager?: string;
+  total_planned_hours: number;
+  priority: string;
+  status: string;
+  tasks?: ProjectTask[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface WeldingPreviewResponse {
+  status: string;
+  task_name: string;
+  allocated_hours: number;
+  duration_months: number;
+  start_date: string;
+  rule_applied: string;
+  monthly_breakdown: ProjectTaskMonthlyDistribution[];
+}
+
+export async function fetchBackendProjects(): Promise<BackendProject[]> {
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/projects/`);
+    if (!res.ok) throw new Error('Failed to fetch backend projects');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error fetching backend projects:', err);
+    return [];
+  }
+}
+
+export async function previewWeldingCalculation(
+  allocatedHours: number,
+  durationMonths: number,
+  startDate: string = "2026-08-01"
+): Promise<WeldingPreviewResponse | null> {
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/projects/preview_welding_calculation/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        allocated_hours: allocatedHours,
+        duration_months: durationMonths,
+        start_date: startDate
+      })
+    });
+    if (!res.ok) throw new Error('Failed previewing welding calculation');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error previewing welding calculation:', err);
+    return null;
+  }
+}
+
+export async function updateBackendProject(id: number | string, data: any): Promise<BackendProject | null> {
+
+  try {
+    const apiBase = getApiBaseUrl();
+    const res = await fetch(`${apiBase}/projects/${id}/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Failed updating backend project');
+    return await res.json();
+  } catch (err) {
+    console.warn('API error updating project:', err);
+    return null;
+  }
+}
+
+

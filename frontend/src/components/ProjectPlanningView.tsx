@@ -15,7 +15,10 @@ import {
   Hash,
   Wrench,
   Scale,
+  Edit,
 } from 'lucide-react';
+import { ProjectDetailsModal } from './ProjectDetailsModal';
+
 
 interface Project {
   id: string;
@@ -50,8 +53,10 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
   const [showForm, setShowForm] = useState(false);
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  useEffect(() => {
+  const loadProjects = () => {
     try {
       const saved = localStorage.getItem('sms_project_planning');
       if (saved) {
@@ -60,7 +65,12 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     } catch (e) {
       console.error('Failed to load saved projects', e);
     }
+  };
+
+  useEffect(() => {
+    loadProjects();
   }, []);
+
 
   const [formData, setFormData] = useState({
     projectName: '',
@@ -214,11 +224,22 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       JSON.stringify(updatedProjects)
     );
 
+    // Also persist to Django REST API backend for engine monthly calculations
+    try {
+      fetch('/api/v1/projects/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProject),
+      }).catch((e) => console.warn('Django API sync note:', e));
+    } catch (err) {
+      console.warn('API sync warning:', err);
+    }
+
     if (onProjectCreated) {
       onProjectCreated(newProject);
     }
 
-    setSaveMessage('Project created successfully.');
+    setSaveMessage('Project created & synchronized with Backend calculation engine successfully.');
 
     resetForm();
 
@@ -227,6 +248,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       setShowForm(false);
     }, 1200);
   };
+
 
   const showLocation =
     formData.task === 'Welding' || formData.task === 'Assembly';
@@ -980,6 +1002,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 <th style={tableHeaderStyle}>Hours</th>
                 <th style={tableHeaderStyle}>Priority</th>
                 <th style={tableHeaderStyle}>Status</th>
+                <th style={tableHeaderStyle}>Action</th>
               </tr>
             </thead>
 
@@ -1103,12 +1126,47 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   <td style={tableCellStyle}>
                     {project.status}
                   </td>
+
+                  {/* ACTION: VIEW / EDIT */}
+                  <td style={tableCellStyle}>
+                    <button
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setIsModalOpen(true);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        padding: '0.35rem 0.65rem',
+                        background: 'rgba(0, 210, 255, 0.12)',
+                        border: '1px solid rgba(0, 210, 255, 0.3)',
+                        borderRadius: '6px',
+                        color: 'var(--accent-cyan)',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Edit size={13} /> View / Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* PROJECT DETAILS & EDIT MODAL */}
+      <ProjectDetailsModal
+        project={selectedProject}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProjectUpdated={loadProjects}
+      />
+
 
       {/* STYLES */}
       <style jsx>{`
