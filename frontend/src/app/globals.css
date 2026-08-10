@@ -202,6 +202,43 @@ body {
   box-shadow: 0 0 10px var(--accent-emerald);
 }
 
+/* Project Planning Form Styles */
+.project-form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.project-form-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(10, 14, 23, 0.8);
+  border: 1px solid rgba(0, 210, 255, 0.2);
+  border-radius: 7px;
+  padding: 0.65rem 0.75rem;
+  color: #ffffff;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.project-form-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+}
+
+.project-form-input::placeholder {
+  color: var(--text-dim);
+}
+
+select.project-form-input option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
 /* Metric Cards Grid */
 .metrics-grid {
   display: grid;

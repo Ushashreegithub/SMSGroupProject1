@@ -426,15 +426,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        project_name = data.get('projectName') or data.get('project_name')
-        project_number = data.get('projectNumber') or data.get('project_number')
+        customer_name = data.get('customerName') or data.get('customer_name') or data.get('projectName') or data.get('project_name', '')
+        wbs_no = data.get('wbsNo') or data.get('wbs_no') or data.get('projectNumber') or data.get('project_number', '')
+        project_code = data.get('projectCode') or data.get('project_code') or wbs_no
+        location = data.get('location', '')
         
-        if not project_name or not project_number:
-            return Response({"error": "projectName and projectNumber are required"}, status=status.HTTP_400_BAD_REQUEST)
+        project_name = customer_name or data.get('projectName') or data.get('project_name', '')
+        project_number = project_code or wbs_no or data.get('projectNumber') or data.get('project_number', '')
+        
+        if not customer_name and not project_name:
+            return Response({"error": "customerName is required"}, status=status.HTTP_400_BAD_REQUEST)
             
         total_planned_hours = float(data.get('plannedHours') or data.get('total_planned_hours', 0.0))
         
         project = Project.objects.create(
+            customer_name=customer_name,
+            wbs_no=wbs_no,
+            project_code=project_code,
+            location=location,
             project_name=project_name,
             project_number=project_number,
             equipment_name=data.get('equipmentName', data.get('equipment_name', '')),
@@ -447,6 +456,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             priority=data.get('priority', 'Medium'),
             status=data.get('status', 'Planned'),
         )
+
 
         raw_tasks = data.get('tasks', [])
         if not raw_tasks and data.get('task'):
@@ -494,37 +504,53 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 buffer_hours=buf_h,
             )
 
-            # Perform monthly calculation for Welding
-            if t_code in ['welding', 'heavy_welding'] or 'weld' in t_name.lower():
-                breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
-                    allocated_hours=t_hours,
-                    duration_months=t_duration,
-                    start_date_str=task_obj.start_date,
-                    adjustment_month_index=adj_m,
-                    actual_utilized_hours=act_h,
-                    buffer_month_index=buf_m,
-                    buffer_hours=buf_h
+            # Perform monthly calculation for all tasks
+            breakdown = ProjectPlanningEngine.calculate_task_monthly_distribution(
+                task_name=t_name,
+                allocated_hours=t_hours,
+                duration_months=t_duration,
+                start_date_str=task_obj.start_date,
+                adjustment_month_index=adj_m,
+                actual_utilized_hours=act_h,
+                buffer_month_index=buf_m,
+                buffer_hours=buf_h
+            )
+            for item in breakdown:
+                ProjectTaskMonthlyDistribution.objects.create(
+                    task=task_obj,
+                    month_index=item['month_index'],
+                    month_label=item['month_label'],
+                    date=item['date'],
+                    hours=item['hours'],
+                    percentage=item['percentage'],
+                    is_adjusted=item.get('is_adjusted', False),
+                    is_buffer_added=item.get('is_buffer_added', False)
                 )
-                for item in breakdown:
-                    ProjectTaskMonthlyDistribution.objects.create(
-                        task=task_obj,
-                        month_index=item['month_index'],
-                        month_label=item['month_label'],
-                        date=item['date'],
-                        hours=item['hours'],
-                        percentage=item['percentage'],
-                        is_adjusted=item.get('is_adjusted', False),
-                        is_buffer_added=item.get('is_buffer_added', False)
-                    )
+
+        # Recalculate total planned hours if sum of task hours exceeds current project total or project total is 0
+        all_task_hours = sum([t.allocated_hours for t in project.tasks.all()])
+        if all_task_hours > project.total_planned_hours or project.total_planned_hours == 0:
+            project.total_planned_hours = all_task_hours
+            project.save()
 
         serializer = self.get_serializer(project)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         data = request.data
 
+        if 'customerName' in data or 'customer_name' in data:
+            instance.customer_name = data.get('customerName') or data.get('customer_name')
+        if 'wbsNo' in data or 'wbs_no' in data:
+            instance.wbs_no = data.get('wbsNo') or data.get('wbs_no')
+        if 'projectCode' in data or 'project_code' in data:
+            instance.project_code = data.get('projectCode') or data.get('project_code')
+        if 'location' in data:
+            instance.location = data.get('location', '')
         if 'projectName' in data or 'project_name' in data:
             instance.project_name = data.get('projectName') or data.get('project_name')
         if 'equipmentName' in data or 'equipment_name' in data:
@@ -547,6 +573,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             instance.status = data.get('status')
             
         instance.save()
+
 
         raw_tasks = data.get('tasks', [])
         if not raw_tasks and data.get('task'):
@@ -596,30 +623,36 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     buffer_hours=buf_h,
                 )
 
-                if t_code in ['welding', 'heavy_welding'] or 'weld' in t_name.lower():
-                    breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
-                        allocated_hours=t_hours,
-                        duration_months=t_duration,
-                        start_date_str=task_obj.start_date,
-                        adjustment_month_index=adj_m,
-                        actual_utilized_hours=act_h,
-                        buffer_month_index=buf_m,
-                        buffer_hours=buf_h
+                breakdown = ProjectPlanningEngine.calculate_task_monthly_distribution(
+                    task_name=t_name,
+                    allocated_hours=t_hours,
+                    duration_months=t_duration,
+                    start_date_str=task_obj.start_date,
+                    adjustment_month_index=adj_m,
+                    actual_utilized_hours=act_h,
+                    buffer_month_index=buf_m,
+                    buffer_hours=buf_h
+                )
+                for item in breakdown:
+                    ProjectTaskMonthlyDistribution.objects.create(
+                        task=task_obj,
+                        month_index=item['month_index'],
+                        month_label=item['month_label'],
+                        date=item['date'],
+                        hours=item['hours'],
+                        percentage=item['percentage'],
+                        is_adjusted=item.get('is_adjusted', False),
+                        is_buffer_added=item.get('is_buffer_added', False)
                     )
-                    for item in breakdown:
-                        ProjectTaskMonthlyDistribution.objects.create(
-                            task=task_obj,
-                            month_index=item['month_index'],
-                            month_label=item['month_label'],
-                            date=item['date'],
-                            hours=item['hours'],
-                            percentage=item['percentage'],
-                            is_adjusted=item.get('is_adjusted', False),
-                            is_buffer_added=item.get('is_buffer_added', False)
-                        )
+
+            all_task_hours = sum([t.allocated_hours for t in instance.tasks.all()])
+            if all_task_hours > 0:
+                instance.total_planned_hours = all_task_hours
+                instance.save()
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
 
 
 

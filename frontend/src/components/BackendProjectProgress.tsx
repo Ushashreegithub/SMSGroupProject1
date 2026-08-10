@@ -219,8 +219,10 @@ export const BackendProjectProgress: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {projects.map((proj, pIdx) => {
-              const projName = proj.project_name || proj.projectName || `Project #${pIdx + 1}`;
-              const projNum = proj.project_number || proj.projectNumber || `PRJ-2026-00${pIdx + 1}`;
+              const customerName = proj.customer_name || proj.customerName || proj.project_name || proj.projectName || `Customer #${pIdx + 1}`;
+              const wbsNo = proj.wbs_no || proj.wbsNo || proj.project_number || proj.projectNumber || `WBS-2026-00${pIdx + 1}`;
+              const projectCode = proj.project_code || proj.projectCode || wbsNo;
+              const location = proj.location || 'N/A';
               const eqName = proj.equipment_name || proj.equipmentName || 'N/A';
               const eqWeight = proj.equipment_weight || proj.equipmentWeight || 'N/A';
               const manager = proj.project_manager || proj.projectManager || 'N/A';
@@ -247,7 +249,7 @@ export const BackendProjectProgress: React.FC = () => {
 
               return (
                 <div
-                  key={proj.id || projNum + pIdx}
+                  key={proj.id || wbsNo + pIdx}
                   style={{
                     background: 'rgba(15, 23, 42, 0.65)',
                     borderRadius: '12px',
@@ -270,7 +272,7 @@ export const BackendProjectProgress: React.FC = () => {
                     }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                         <span
                           style={{
                             padding: '0.25rem 0.6rem',
@@ -283,10 +285,26 @@ export const BackendProjectProgress: React.FC = () => {
                             border: '1px solid rgba(0, 210, 255, 0.3)',
                           }}
                         >
-                          {projNum}
+                          WBS: {wbsNo}
                         </span>
+                        {projectCode && projectCode !== wbsNo && (
+                          <span
+                            style={{
+                              padding: '0.25rem 0.6rem',
+                              background: 'rgba(168, 85, 247, 0.15)',
+                              color: '#a855f7',
+                              borderRadius: '6px',
+                              fontSize: '0.78rem',
+                              fontWeight: 800,
+                              fontFamily: 'monospace',
+                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                            }}
+                          >
+                            Code: {projectCode}
+                          </span>
+                        )}
                         <h4 style={{ margin: 0, color: '#ffffff', fontSize: '1.1rem', fontWeight: 800 }}>
-                          {projName}
+                          Customer: {customerName}
                         </h4>
                       </div>
 
@@ -300,12 +318,14 @@ export const BackendProjectProgress: React.FC = () => {
                           color: 'var(--text-muted)',
                         }}
                       >
+                        <span>Location: <strong style={{ color: 'var(--accent-cyan)' }}>{location}</strong></span>
                         <span>Equipment: <strong style={{ color: '#fff' }}>{eqName}</strong> ({eqWeight} kg)</span>
                         <span>Manager: <strong style={{ color: '#fff' }}>{manager}</strong></span>
                         <span>Zero Date: <strong style={{ color: 'var(--accent-emerald)' }}>{zeroDate}</strong></span>
                         <span>CDD: <strong style={{ color: 'var(--accent-cyan)' }}>{cdd}</strong></span>
                       </div>
                     </div>
+
 
                     <div
                       style={{

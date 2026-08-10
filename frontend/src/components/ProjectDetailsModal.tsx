@@ -66,10 +66,19 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   useEffect(() => {
     if (project) {
       const taskObj = (project.tasks && project.tasks[0]) || {};
+      const cName = project.customer_name || project.customerName || project.project_name || project.projectName || '';
+      const wbs = project.wbs_no || project.wbsNo || project.project_number || project.projectNumber || '';
+      const pCode = project.project_code || project.projectCode || wbs;
+      const loc = project.location || taskObj.location || '';
+
       setFormData({
         id: project.id,
-        projectName: project.project_name || project.projectName || '',
-        projectNumber: project.project_number || project.projectNumber || '',
+        customerName: cName,
+        wbsNo: wbs,
+        projectCode: pCode,
+        location: loc,
+        projectName: cName,
+        projectNumber: wbs,
         equipmentName: project.equipment_name || project.equipmentName || '',
         equipmentWeight: project.equipment_weight || project.equipmentWeight || '',
         description: project.description || '',
@@ -77,7 +86,6 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         endDate: project.cdd || project.endDate || '',
         projectManager: project.project_manager || project.projectManager || '',
         task: taskObj.task_name || project.task || 'Welding',
-        location: taskObj.location || project.location || '',
         smi: taskObj.smi || project.smi || '',
         labourSupply: taskObj.labour_supply || project.labourSupply || project.labour_supply || '',
         jobContractor: taskObj.job_contractor || project.jobContractor || project.job_contractor || '',
@@ -93,6 +101,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
       setSaveMsg('');
     }
   }, [project]);
+
 
   if (!isOpen || !project) return null;
 
@@ -115,11 +124,22 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     const bufMonth = formData.bufferMonthIndex ? Number(formData.bufferMonthIndex) : null;
     const bufHours = formData.bufferHours ? Number(formData.bufferHours) : 0;
 
+    const cName = formData.customerName || formData.projectName;
+    const wbs = formData.wbsNo || formData.projectNumber;
+    const pCode = formData.projectCode || wbs;
+
     const updatedPayload = {
-      projectName: formData.projectName,
-      project_name: formData.projectName,
-      projectNumber: formData.projectNumber,
-      project_number: formData.projectNumber,
+      customerName: cName,
+      customer_name: cName,
+      wbsNo: wbs,
+      wbs_no: wbs,
+      projectCode: pCode,
+      project_code: pCode,
+      location: formData.location,
+      projectName: cName,
+      project_name: cName,
+      projectNumber: wbs,
+      project_number: wbs,
       equipmentName: formData.equipmentName,
       equipment_name: formData.equipmentName,
       equipmentWeight: formData.equipmentWeight,
@@ -135,6 +155,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
       total_planned_hours: Number(formData.plannedHours),
       priority: formData.priority,
       status: formData.status,
+
       tasks: [
         {
           task_name: formData.task,
@@ -366,18 +387,19 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         {/* FORM */}
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* ROW 1: Project Name & Number */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+          {/* ROW 1: Customer Name & Location */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                Project Name *
+                Customer Name *
               </label>
               <input
                 type="text"
-                name="projectName"
-                value={formData.projectName}
+                name="customerName"
+                value={formData.customerName}
                 onChange={handleChange}
                 required
+                placeholder="e.g. JSW Steels Ltd"
                 style={{
                   width: '100%',
                   padding: '0.6rem 0.8rem',
@@ -393,14 +415,40 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                Project ID / Number *
+                Location
               </label>
               <input
                 type="text"
-                name="projectNumber"
-                value={formData.projectNumber}
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g. Khordha, Odisha"
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.8rem',
+                  background: 'rgba(10, 16, 30, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '0.88rem',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* ROW 2: WBS No. & Project Code */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                WBS No. *
+              </label>
+              <input
+                type="text"
+                name="wbsNo"
+                value={formData.wbsNo}
                 onChange={handleChange}
                 required
+                placeholder="e.g. WBS-2026-001"
                 style={{
                   width: '100%',
                   padding: '0.6rem 0.8rem',
@@ -413,7 +461,30 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 }}
               />
             </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                Project Code
+              </label>
+              <input
+                type="text"
+                name="projectCode"
+                value={formData.projectCode}
+                onChange={handleChange}
+                placeholder="e.g. PRJ-2026-001"
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.8rem',
+                  background: 'rgba(10, 16, 30, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '0.88rem',
+                }}
+              />
+            </div>
           </div>
+
 
           {/* ROW 2: Equipment Name & Weight */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

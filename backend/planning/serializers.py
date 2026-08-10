@@ -57,10 +57,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
-            'id', 'project_name', 'project_number', 'equipment_name', 'equipment_weight',
+            'id', 'customer_name', 'wbs_no', 'project_code', 'location',
+            'project_name', 'project_number', 'equipment_name', 'equipment_weight',
             'description', 'zero_date', 'cdd', 'project_manager', 'total_planned_hours',
             'priority', 'status', 'tasks', 'created_at', 'updated_at'
         ]
+
 
 class WeldingCalculationPreviewSerializer(serializers.Serializer):
     allocated_hours = serializers.FloatField(required=True, min_value=0.1)

@@ -151,3 +151,146 @@ class ProjectPlanningEngine:
             })
 
         return monthly_breakdown
+
+    @classmethod
+    def calculate_standard_monthly_distribution(
+        cls,
+        allocated_hours: float,
+        duration_months: int,
+        start_date_str: str = None,
+        adjustment_month_index: int = None,
+        actual_utilized_hours: float = None,
+        buffer_month_index: int = None,
+        buffer_hours: float = 0.0
+    ) -> list:
+        """
+        Calculates equal monthly hour breakdown for non-welding tasks (Machining, Assembly, Plating, RR)
+        with support for adjustments and buffers.
+        """
+        if allocated_hours <= 0 or duration_months <= 0:
+            return []
+
+        start_dt = date(2026, 8, 1)
+        if start_date_str:
+            try:
+                if isinstance(start_date_str, date):
+                    start_dt = start_date_str
+                else:
+                    start_dt = datetime.strptime(str(start_date_str)[:10], "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        allocated_hours = float(allocated_hours)
+        duration_months = int(duration_months)
+        buffer_hours = float(buffer_hours or 0.0)
+
+        # Equal baseline distribution
+        per_month_base = round(allocated_hours / duration_months, 2)
+        baseline_hours = []
+        for i in range(duration_months):
+            if i == duration_months - 1:
+                baseline_hours.append(round(allocated_hours - sum(baseline_hours), 2))
+            else:
+                baseline_hours.append(per_month_base)
+
+        revised_hours = list(baseline_hours)
+        has_adjustment = False
+        adj_index = None
+
+        if adjustment_month_index is not None and actual_utilized_hours is not None:
+            try:
+                adj_index = int(adjustment_month_index) - 1
+                if 0 <= adj_index < duration_months:
+                    has_adjustment = True
+                    planned_orig = revised_hours[adj_index]
+                    actual_val = float(actual_utilized_hours)
+                    diff = planned_orig - actual_val
+                    revised_hours[adj_index] = actual_val
+
+                    subsequent_count = duration_months - (adj_index + 1)
+                    if subsequent_count > 0:
+                        add_per_month = round(diff / subsequent_count, 2)
+                        accumulated_diff = 0.0
+                        for k in range(adj_index + 1, duration_months):
+                            if k == duration_months - 1:
+                                revised_hours[k] = round(revised_hours[k] + (diff - accumulated_diff), 2)
+                            else:
+                                revised_hours[k] = round(revised_hours[k] + add_per_month, 2)
+                                accumulated_diff += add_per_month
+            except (ValueError, TypeError):
+                pass
+
+        buf_index = None
+        has_buffer = False
+        if buffer_month_index is not None and buffer_hours > 0:
+            try:
+                buf_index = int(buffer_month_index) - 1
+                if 0 <= buf_index < duration_months:
+                    has_buffer = True
+                    revised_hours[buf_index] = round(revised_hours[buf_index] + buffer_hours, 2)
+            except (ValueError, TypeError):
+                pass
+
+        total_effective_hours = sum(revised_hours)
+        monthly_breakdown = []
+
+        for idx in range(duration_months):
+            m_date = cls.add_months(start_dt, idx)
+            h = revised_hours[idx]
+            pct = round((h / total_effective_hours) * 100.0, 2) if total_effective_hours > 0 else 0.0
+
+            is_adj = (adj_index == idx) if has_adjustment else False
+            is_buf = (buf_index == idx) if has_buffer else False
+
+            monthly_breakdown.append({
+                "month_index": idx + 1,
+                "month_label": m_date.strftime("%b %Y"),
+                "date": m_date.strftime("%Y-%m-%d"),
+                "hours": h,
+                "percentage": pct,
+                "is_adjusted": is_adj,
+                "is_buffer_added": is_buf,
+                "buffer_hours_added": buffer_hours if is_buf else 0.0,
+            })
+
+        return monthly_breakdown
+
+    @classmethod
+    def calculate_task_monthly_distribution(
+        cls,
+        task_name: str,
+        allocated_hours: float,
+        duration_months: int,
+        start_date_str: str = None,
+        adjustment_month_index: int = None,
+        actual_utilized_hours: float = None,
+        buffer_month_index: int = None,
+        buffer_hours: float = 0.0
+    ) -> list:
+        """
+        Dispatches calculation logic based on task_name:
+        - Welding: 15% Month 1 ramp-up, 85% remaining split
+        - Machining, Assembly, Plating, RR (and others): Equal monthly split
+        """
+        t_name = str(task_name or '').strip().lower()
+        if 'weld' in t_name:
+            return cls.calculate_welding_monthly_distribution(
+                allocated_hours=allocated_hours,
+                duration_months=duration_months,
+                start_date_str=start_date_str,
+                adjustment_month_index=adjustment_month_index,
+                actual_utilized_hours=actual_utilized_hours,
+                buffer_month_index=buffer_month_index,
+                buffer_hours=buffer_hours,
+            )
+        else:
+            return cls.calculate_standard_monthly_distribution(
+                allocated_hours=allocated_hours,
+                duration_months=duration_months,
+                start_date_str=start_date_str,
+                adjustment_month_index=adjustment_month_index,
+                actual_utilized_hours=actual_utilized_hours,
+                buffer_month_index=buffer_month_index,
+                buffer_hours=buffer_hours,
+            )
+

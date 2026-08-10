@@ -47,9 +47,12 @@ class ManualInputConfig(models.Model):
 
 
 class Project(models.Model):
-    project_name = models.CharField(max_length=256)
+    customer_name = models.CharField(max_length=256, blank=True, default="")
+    wbs_no = models.CharField(max_length=128, blank=True, default="")
+    project_code = models.CharField(max_length=128, blank=True, default="")
     location = models.CharField(max_length=128, blank=True, default="")
-    project_number = models.CharField(max_length=128, unique=True)
+    project_name = models.CharField(max_length=256, blank=True, default="")
+    project_number = models.CharField(max_length=128, blank=True, default="")
     equipment_name = models.CharField(max_length=256, blank=True, default="")
     equipment_weight = models.CharField(max_length=128, blank=True, default="")
     description = models.TextField(blank=True, default="")
@@ -66,7 +69,10 @@ class Project(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.project_number} - {self.project_name}"
+        c_name = self.customer_name or self.project_name or 'Project'
+        code = self.project_code or self.wbs_no or self.project_number or ''
+        return f"{code} - {c_name}"
+
 
 
 class ProjectTask(models.Model):

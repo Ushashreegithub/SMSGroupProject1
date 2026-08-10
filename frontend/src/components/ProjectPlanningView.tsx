@@ -16,6 +16,9 @@ import {
   Wrench,
   Scale,
   Edit,
+  MapPin,
+  Tag,
+  Trash2,
 } from 'lucide-react';
 import { ProjectDetailsModal } from './ProjectDetailsModal';
 
@@ -47,6 +50,30 @@ interface ProjectPlanningViewProps {
   onProjectCreated?: (project: Project) => void;
 }
 
+interface TaskItem {
+  id: string;
+  task_name: string;
+  allocated_hours: number | string;
+  duration_months: number | string;
+  location: string;
+  smi: string;
+  labour_supply: string;
+  job_contractor: string;
+}
+
+const STANDARD_TASKS = ['Welding', 'Machining', 'Assembly', 'Plating', 'RR'];
+
+const createDefaultTask = (taskName: string = 'Welding'): TaskItem => ({
+  id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+  task_name: taskName,
+  allocated_hours: 3000,
+  duration_months: 3,
+  location: 'Khordha',
+  smi: '',
+  labour_supply: '',
+  job_contractor: '',
+});
+
 export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
   onProjectCreated,
 }) => {
@@ -71,8 +98,33 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     loadProjects();
   }, []);
 
+  const [formTasks, setFormTasks] = useState<TaskItem[]>([createDefaultTask('Welding')]);
+
+  const addFormTask = () => {
+    if (formTasks.length >= 5) return;
+    const existingNames = formTasks.map((t) => t.task_name);
+    const nextName = STANDARD_TASKS.find((n) => !existingNames.includes(n)) || 'Machining';
+    setFormTasks((prev) => [...prev, createDefaultTask(nextName)]);
+  };
+
+  const removeFormTask = (index: number) => {
+    if (formTasks.length <= 1) return;
+    setFormTasks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTaskFieldChange = (index: number, field: string, value: any) => {
+    setFormTasks((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
 
   const [formData, setFormData] = useState({
+    customerName: '',
+    wbsNo: '',
+    projectCode: '',
+    location: '',
     projectName: '',
     projectNumber: '',
     equipmentName: '',
@@ -81,15 +133,6 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     startDate: '',
     endDate: '',
     projectManager: '',
-    task: '',
-    location: '',
-
-    // New fields
-    smi: '',
-    labourSupply: '',
-    jobContractor: '',
-
-    plannedHours: '',
     priority: 'Medium',
     status: 'Planned',
   });
@@ -106,33 +149,16 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-
-      // If task is changed to something other than Welding/Assembly,
-      // clear location and the three additional fields.
-      ...(name === 'task' &&
-      !['Welding', 'Assembly'].includes(value)
-        ? {
-            location: '',
-            smi: '',
-            labourSupply: '',
-            jobContractor: '',
-          }
-        : {}),
-
-      // If location is changed to K+M,
-      // clear the three additional fields.
-      ...(name === 'location' && value === 'K+M'
-        ? {
-            smi: '',
-            labourSupply: '',
-            jobContractor: '',
-          }
-        : {}),
     }));
   };
 
   const resetForm = () => {
+    setFormTasks([createDefaultTask('Welding')]);
     setFormData({
+      customerName: '',
+      wbsNo: '',
+      projectCode: '',
+      location: '',
       projectName: '',
       projectNumber: '',
       equipmentName: '',
@@ -141,16 +167,11 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       startDate: '',
       endDate: '',
       projectManager: '',
-      task: '',
-      location: '',
-      smi: '',
-      labourSupply: '',
-      jobContractor: '',
-      plannedHours: '',
       priority: 'Medium',
       status: 'Planned',
     });
   };
+
 
   const handleCancel = () => {
     setShowForm(false);
@@ -161,26 +182,20 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const cName = formData.customerName || formData.projectName;
+    const wbs = formData.wbsNo || formData.projectNumber;
+    const pCode = formData.projectCode || wbs;
+
     // Basic required-field validation
     if (
-      !formData.projectName ||
-      !formData.projectNumber ||
+      !cName ||
+      !wbs ||
       !formData.startDate ||
       !formData.endDate ||
       !formData.projectManager ||
-      !formData.task ||
-      !formData.plannedHours
+      formTasks.length === 0
     ) {
-      setSaveMessage('Please fill all required fields.');
-      return;
-    }
-
-    // Location is required only for Welding and Assembly
-    if (
-      ['Welding', 'Assembly'].includes(formData.task) &&
-      !formData.location
-    ) {
-      setSaveMessage('Please select a location for the selected task.');
+      setSaveMessage('Please fill all required project fields and add at least one task.');
       return;
     }
 
@@ -190,29 +205,52 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       return;
     }
 
-    const newProject: Project = {
-      id: `project_${Date.now()}`,
+    // Calculate total project planned hours
+    const totalPlannedHours = formTasks.reduce(
+      (sum, t) => sum + (Number(t.allocated_hours) || 0),
+      0
+    );
 
-      projectName: formData.projectName,
-      projectNumber: formData.projectNumber,
+    const primaryTask = formTasks[0] || {};
+
+    const newProject: any = {
+      id: `project_${Date.now()}`,
+      customerName: cName,
+      customer_name: cName,
+      wbsNo: wbs,
+      wbs_no: wbs,
+      projectCode: pCode,
+      project_code: pCode,
+      location: formData.location || primaryTask.location || '',
+      projectName: cName,
+      project_name: cName,
+      projectNumber: wbs,
+      project_number: wbs,
       equipmentName: formData.equipmentName,
       equipmentWeight: formData.equipmentWeight,
       description: formData.description,
       startDate: formData.startDate,
       endDate: formData.endDate,
       projectManager: formData.projectManager,
-      task: formData.task,
-      location: formData.location,
-
-      // New fields
-      smi: formData.smi,
-      labourSupply: formData.labourSupply,
-      jobContractor: formData.jobContractor,
-
-      plannedHours: Number(formData.plannedHours),
+      task: primaryTask.task_name || 'Welding',
+      plannedHours: totalPlannedHours,
+      total_planned_hours: totalPlannedHours,
       priority: formData.priority,
       status: formData.status,
+      tasks: formTasks.map((t) => ({
+        task_name: t.task_name,
+        task_code: String(t.task_name).toLowerCase().replace(/\s+/g, '_'),
+        allocated_hours: Number(t.allocated_hours) || 0,
+        duration_months: Number(t.duration_months) || 3,
+        start_date: formData.startDate,
+        location: t.location || formData.location || '',
+        smi: t.smi || '',
+        labour_supply: t.labour_supply || '',
+        job_contractor: t.job_contractor || '',
+      })),
     };
+
+
 
     const updatedProjects = [...projects, newProject];
 
@@ -396,7 +434,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* ROW 1 - PROJECT NAME & NUMBER */}
+            {/* ROW 1 - CUSTOMER NAME & LOCATION */}
             <div
               style={{
                 display: 'grid',
@@ -405,40 +443,85 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 marginBottom: '1rem',
               }}
             >
-              {/* PROJECT NAME */}
+              {/* CUSTOMER NAME */}
               <div>
                 <label className="project-form-label">
-                  <FolderKanban size={14} />
-                  Project Name *
+                  <User size={14} />
+                  Customer Name *
                 </label>
 
                 <input
                   type="text"
-                  name="projectName"
-                  value={formData.projectName}
+                  name="customerName"
+                  value={formData.customerName}
                   onChange={handleChange}
-                  placeholder="Enter project name"
+                  placeholder="e.g. JSW Steels Ltd"
                   className="project-form-input"
                 />
               </div>
 
-              {/* PROJECT NUMBER */}
+              {/* LOCATION */}
               <div>
                 <label className="project-form-label">
-                  <Hash size={14} />
-                  Project ID / Project Number *
+                  <MapPin size={14} />
+                  Location
                 </label>
 
                 <input
                   type="text"
-                  name="projectNumber"
-                  value={formData.projectNumber}
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="e.g. Khordha, Odisha"
+                  className="project-form-input"
+                />
+              </div>
+            </div>
+
+            {/* ROW 2 - WBS NO & PROJECT CODE */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                marginBottom: '1rem',
+              }}
+            >
+              {/* WBS NO */}
+              <div>
+                <label className="project-form-label">
+                  <Hash size={14} />
+                  WBS No. *
+                </label>
+
+                <input
+                  type="text"
+                  name="wbsNo"
+                  value={formData.wbsNo}
+                  onChange={handleChange}
+                  placeholder="e.g. WBS-2026-001"
+                  className="project-form-input"
+                />
+              </div>
+
+              {/* PROJECT CODE */}
+              <div>
+                <label className="project-form-label">
+                  <Tag size={14} />
+                  Project Code
+                </label>
+
+                <input
+                  type="text"
+                  name="projectCode"
+                  value={formData.projectCode}
                   onChange={handleChange}
                   placeholder="e.g. PRJ-2026-001"
                   className="project-form-input"
                 />
               </div>
             </div>
+
 
             {/* ROW 2 - EQUIPMENT NAME & EQUIPMENT WEIGHT */}
             <div
@@ -574,163 +657,199 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   className="project-form-input"
                 />
               </div>
-
-              {/* TASK */}
-              <div>
-                <label className="project-form-label">
-                  <FolderKanban size={14} />
-                  Task *
-                </label>
-
-                <select
-                  name="task"
-                  value={formData.task}
-                  onChange={handleChange}
-                  className="project-form-input"
-                >
-                  <option value="">Select task</option>
-                  <option value="Welding">Welding</option>
-                  <option value="Assembly">Assembly</option>
-                  <option value="Machining">Machining</option>
-                  <option value="Plating">Plating</option>
-                  <option value="RR">RR</option>
-                  <option value="Service Machining">
-                    Service Machining
-                  </option>
-                </select>
-              </div>
             </div>
 
-            {/* LOCATION */}
-            {showLocation && (
+            {/* MULTI-TASK BUILDER SECTION */}
+            <div
+              style={{
+                marginBottom: '1.5rem',
+                padding: '1.25rem',
+                background: 'rgba(0, 210, 255, 0.03)',
+                border: '1px solid rgba(0, 210, 255, 0.2)',
+                borderRadius: '12px',
+              }}
+            >
               <div
                 style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   marginBottom: '1rem',
-                  padding: '0.85rem',
-                  background: 'rgba(0, 210, 255, 0.04)',
-                  border: '1px solid rgba(0, 210, 255, 0.15)',
-                  borderRadius: '8px',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <label className="project-form-label">
-                  <FolderKanban size={14} />
-                  {formData.task} Location *
-                </label>
-
-                <select
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="project-form-input"
-                >
-                  <option value="">Select location</option>
-                  <option value="Khordha">Khordha</option>
-                  <option value="Mancheswar">Mancheswar</option>
-                  <option value="K+M">K+M</option>
-                </select>
-              </div>
-            )}
-
-            {/* WORK DETAILS
-                ONLY FOR KHORDHA OR MANCHESWAR
-                AND NOT FOR K+M
-            */}
-            {showWorkDetails && (
-              <div
-                style={{
-                  marginBottom: '1rem',
-                  padding: '1rem',
-                  background: 'rgba(0, 210, 255, 0.03)',
-                  border: '1px solid rgba(0, 210, 255, 0.15)',
-                  borderRadius: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    marginBottom: '0.9rem',
-                  }}
-                >
-                  <h4
-                    style={{
-                      margin: 0,
-                      color: '#ffffff',
-                      fontSize: '0.85rem',
-                      fontWeight: 800,
-                    }}
-                  >
-                    {formData.task} - {formData.location} Details
+                <div>
+                  <h4 style={{ margin: 0, color: '#ffffff', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <FolderKanban size={16} color="var(--accent-cyan)" />
+                    Project Tasks ({formTasks.length} / 5 Max)
                   </h4>
-
-                  <p
-                    style={{
-                      margin: '0.3rem 0 0',
-                      color: 'var(--text-dim)',
-                      fontSize: '0.7rem',
-                    }}
-                  >
-                    These fields are optional.
+                  <p style={{ margin: '0.2rem 0 0', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                    Add up to 5 tasks per project from standard categories: Welding, Machining, Assembly, Plating, RR.
                   </p>
                 </div>
 
-                <div
+                <button
+                  type="button"
+                  onClick={addFormTask}
+                  disabled={formTasks.length >= 5}
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: '1rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.45rem 0.85rem',
+                    background: formTasks.length >= 5 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 210, 255, 0.15)',
+                    border: '1px solid rgba(0, 210, 255, 0.3)',
+                    borderRadius: '7px',
+                    color: formTasks.length >= 5 ? 'var(--text-dim)' : 'var(--accent-cyan)',
+                    fontWeight: 700,
+                    fontSize: '0.78rem',
+                    cursor: formTasks.length >= 5 ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {/* SMI */}
-                  <div>
-                    <label className="project-form-label">
-                      SMI
-                    </label>
-
-                    <input
-                      type="text"
-                      name="smi"
-                      value={formData.smi}
-                      onChange={handleChange}
-                      placeholder="Enter SMI"
-                      className="project-form-input"
-                    />
-                  </div>
-
-                  {/* LABOUR SUPPLY */}
-                  <div>
-                    <label className="project-form-label">
-                      Labour Supply
-                    </label>
-
-                    <input
-                      type="text"
-                      name="labourSupply"
-                      value={formData.labourSupply}
-                      onChange={handleChange}
-                      placeholder="Enter Labour Supply"
-                      className="project-form-input"
-                    />
-                  </div>
-
-                  {/* JOB CONTRACTOR */}
-                  <div>
-                    <label className="project-form-label">
-                      Job Contractor
-                    </label>
-
-                    <input
-                      type="text"
-                      name="jobContractor"
-                      value={formData.jobContractor}
-                      onChange={handleChange}
-                      placeholder="Enter Job Contractor"
-                      className="project-form-input"
-                    />
-                  </div>
-                </div>
+                  <Plus size={15} /> Add Task ({5 - formTasks.length} left)
+                </button>
               </div>
-            )}
 
-            {/* ROW 5 */}
+              {/* LIST OF TASKS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {formTasks.map((tItem, tIdx) => (
+                  <div
+                    key={tItem.id || tIdx}
+                    style={{
+                      background: 'rgba(10, 16, 30, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '10px',
+                      padding: '1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                        Task #{tIdx + 1}: {tItem.task_name || 'Task'}
+                      </span>
+                      {formTasks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeFormTask(tIdx)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '6px',
+                            color: '#f87171',
+                            padding: '0.3rem 0.6rem',
+                            cursor: 'pointer',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                          }}
+                        >
+                          <Trash2 size={13} /> Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1.2fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      {/* TASK NAME */}
+                      <div>
+                        <label className="project-form-label">Task Type *</label>
+                        <select
+                          value={tItem.task_name}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'task_name', e.target.value)}
+                          className="project-form-input"
+                        >
+                          <option value="Welding">Welding</option>
+                          <option value="Machining">Machining</option>
+                          <option value="Assembly">Assembly</option>
+                          <option value="Plating">Plating</option>
+                          <option value="RR">RR</option>
+                        </select>
+                      </div>
+
+                      {/* ALLOCATED HOURS */}
+                      <div>
+                        <label className="project-form-label">Allocated Hours *</label>
+                        <input
+                          type="number"
+                          value={tItem.allocated_hours}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'allocated_hours', e.target.value)}
+                          min="1"
+                          placeholder="e.g. 3000"
+                          className="project-form-input"
+                        />
+                      </div>
+
+                      {/* DURATION (MONTHS) */}
+                      <div>
+                        <label className="project-form-label">Duration (Months) *</label>
+                        <input
+                          type="number"
+                          value={tItem.duration_months}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'duration_months', e.target.value)}
+                          min="1"
+                          max="24"
+                          placeholder="e.g. 3"
+                          className="project-form-input"
+                        />
+                      </div>
+
+                      {/* LOCATION */}
+                      <div>
+                        <label className="project-form-label">Location</label>
+                        <select
+                          value={tItem.location}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'location', e.target.value)}
+                          className="project-form-input"
+                        >
+                          <option value="Khordha">Khordha</option>
+                          <option value="Mancheswar">Mancheswar</option>
+                          <option value="K+M">K+M</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* OPTIONAL DETAILS: SMI, LABOUR SUPPLY, JOB CONTRACTOR */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label className="project-form-label" style={{ fontSize: '0.7rem' }}>SMI (Optional)</label>
+                        <input
+                          type="text"
+                          value={tItem.smi}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'smi', e.target.value)}
+                          placeholder="e.g. Internal"
+                          className="project-form-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="project-form-label" style={{ fontSize: '0.7rem' }}>Labour Supply (Optional)</label>
+                        <input
+                          type="text"
+                          value={tItem.labour_supply}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'labour_supply', e.target.value)}
+                          placeholder="e.g. Vendor A"
+                          className="project-form-input"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="project-form-label" style={{ fontSize: '0.7rem' }}>Job Contractor (Optional)</label>
+                        <input
+                          type="text"
+                          value={tItem.job_contractor}
+                          onChange={(e) => handleTaskFieldChange(tIdx, 'job_contractor', e.target.value)}
+                          placeholder="e.g. SMS Subcontractor"
+                          className="project-form-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ROW 5 - TOTAL PLANNED HOURS DISPLAY, PRIORITY & STATUS */}
             <div
               style={{
                 display: 'grid',
@@ -739,24 +858,31 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 marginBottom: '1.25rem',
               }}
             >
-              {/* PLANNED HOURS */}
+              {/* TOTAL PLANNED HOURS (AUTOMATICALLY CALCULATED FROM TASKS) */}
               <div>
                 <label className="project-form-label">
                   <Clock size={14} />
-                  Planned Hours *
+                  Total Project Planned Hours
                 </label>
 
-                <input
-                  type="number"
-                  name="plannedHours"
-                  value={formData.plannedHours}
-                  onChange={handleChange}
-                  min="0"
-                  step="1"
-                  placeholder="e.g. 5000"
-                  className="project-form-input"
-                />
+                <div
+                  style={{
+                    padding: '0.65rem 0.75rem',
+                    background: 'rgba(0, 210, 255, 0.08)',
+                    border: '1px solid rgba(0, 210, 255, 0.25)',
+                    borderRadius: '7px',
+                    color: 'var(--accent-cyan)',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  {formTasks
+                    .reduce((sum, t) => sum + (Number(t.allocated_hours) || 0), 0)
+                    .toLocaleString()}{' '}
+                  hrs
+                </div>
               </div>
+
 
               {/* PRIORITY */}
               <div>
@@ -988,8 +1114,9 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   color: 'var(--text-muted)',
                 }}
               >
-                <th style={tableHeaderStyle}>Project</th>
-                <th style={tableHeaderStyle}>Project ID</th>
+                <th style={tableHeaderStyle}>Customer Name</th>
+                <th style={tableHeaderStyle}>WBS No.</th>
+                <th style={tableHeaderStyle}>Project Code</th>
                 <th style={tableHeaderStyle}>Equipment</th>
                 <th style={tableHeaderStyle}>Weight (kg)</th>
                 <th style={tableHeaderStyle}>Manager</th>
@@ -1007,38 +1134,49 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
             </thead>
 
             <tbody>
-              {projects.map((project) => (
-                <tr
-                  key={project.id}
-                  style={{
-                    borderBottom:
-                      '1px solid rgba(255,255,255,0.05)',
-                  }}
-                >
-                  {/* PROJECT */}
-                  <td style={tableCellStyle}>
-                    <strong style={{ color: '#ffffff' }}>
-                      {project.projectName}
-                    </strong>
+              {projects.map((project: any) => {
+                const cName = project.customer_name || project.customerName || project.project_name || project.projectName || '—';
+                const wbs = project.wbs_no || project.wbsNo || project.project_number || project.projectNumber || '—';
+                const pCode = project.project_code || project.projectCode || '—';
 
-                    {project.description && (
-                      <div
-                        style={{
-                          color: 'var(--text-dim)',
-                          fontSize: '0.68rem',
-                          marginTop: '0.2rem',
-                          maxWidth: '250px',
-                        }}
-                      >
-                        {project.description}
-                      </div>
-                    )}
-                  </td>
+                return (
+                  <tr
+                    key={project.id}
+                    style={{
+                      borderBottom:
+                        '1px solid rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    {/* CUSTOMER NAME */}
+                    <td style={tableCellStyle}>
+                      <strong style={{ color: '#ffffff' }}>
+                        {cName}
+                      </strong>
 
-                  {/* PROJECT ID */}
-                  <td style={tableCellStyle}>
-                    {project.projectNumber}
-                  </td>
+                      {project.description && (
+                        <div
+                          style={{
+                            color: 'var(--text-dim)',
+                            fontSize: '0.68rem',
+                            marginTop: '0.2rem',
+                            maxWidth: '250px',
+                          }}
+                        >
+                          {project.description}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* WBS NO */}
+                    <td style={tableCellStyle}>
+                      <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>{wbs}</span>
+                    </td>
+
+                    {/* PROJECT CODE */}
+                    <td style={tableCellStyle}>
+                      {pCode}
+                    </td>
+
 
                   {/* EQUIPMENT NAME */}
                   <td style={tableCellStyle}>
@@ -1153,8 +1291,10 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
+              );
+            })}
+          </tbody>
+
           </table>
         </div>
       )}
@@ -1168,59 +1308,11 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       />
 
 
-      {/* STYLES */}
-      <style jsx>{`
-        .project-form-label {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          color: var(--text-muted);
-          font-size: 0.75rem;
-          font-weight: 700;
-          margin-bottom: 0.4rem;
-        }
-
-        .project-form-input {
-          width: 100%;
-          box-sizing: border-box;
-          background: rgba(10, 14, 23, 0.8);
-          border: 1px solid rgba(0, 210, 255, 0.2);
-          border-radius: 7px;
-          padding: 0.65rem 0.75rem;
-          color: #ffffff;
-          font-size: 0.8rem;
-          outline: none;
-        }
-
-        .project-form-input:focus {
-          border-color: var(--accent-cyan);
-          box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
-        }
-
-        .project-form-input::placeholder {
-          color: var(--text-dim);
-        }
-
-        select.project-form-input option {
-          background: #0f172a;
-          color: #ffffff;
-        }
-
-        @media (max-width: 900px) {
-          form > div {
-            grid-template-columns: 1fr !important;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .project-form-input {
-            font-size: 0.75rem;
-          }
-        }
-      `}</style>
     </div>
   );
 };
+
+
 
 const tableHeaderStyle: React.CSSProperties = {
   padding: '0.75rem',
@@ -1233,4 +1325,4 @@ const tableCellStyle: React.CSSProperties = {
   padding: '0.75rem',
   color: 'var(--text-main)',
   verticalAlign: 'top',
-};
+};

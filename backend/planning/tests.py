@@ -186,3 +186,44 @@ class WeldingCalculationTestCase(TestCase):
         self.assertEqual(result[2]['hours'], 2250.0)
         self.assertEqual(sum(r['hours'] for r in result), 5500.0)
 
+    def test_multi_task_project_creation(self):
+        """
+        Tests creation of a project with 5 tasks: Welding, Machining, Assembly, Plating, RR.
+        Verifies Welding uses 15% ramp-up and Machining/Assembly/Plating/RR use equal distribution.
+        """
+        payload = {
+            "customerName": "Tata Steel",
+            "wbsNo": "WBS-2026-TATA",
+            "projectCode": "PRJ-TATA-01",
+            "location": "Khordha",
+            "startDate": "2026-08-01",
+            "endDate": "2026-11-01",
+            "projectManager": "Ramesh Kumar",
+            "tasks": [
+                {"task_name": "Welding", "allocated_hours": 3000, "duration_months": 3},
+                {"task_name": "Machining", "allocated_hours": 1500, "duration_months": 3},
+                {"task_name": "Assembly", "allocated_hours": 1200, "duration_months": 3},
+                {"task_name": "Plating", "allocated_hours": 900, "duration_months": 3},
+                {"task_name": "RR", "allocated_hours": 600, "duration_months": 3},
+            ]
+        }
+        response = self.client.post('/api/v1/projects/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        project = Project.objects.get(wbs_no="WBS-2026-TATA")
+        self.assertEqual(project.tasks.count(), 5)
+
+        # Welding: 15% in M1 = 450, M2 & M3 = 1275 each
+        weld_task = project.tasks.get(task_name="Welding")
+        w_dists = list(weld_task.monthly_distributions.all())
+        self.assertEqual(w_dists[0].hours, 450.0)
+        self.assertEqual(w_dists[1].hours, 1275.0)
+
+        # Machining: Equal split 1500 / 3 = 500 each month
+        mach_task = project.tasks.get(task_name="Machining")
+        m_dists = list(mach_task.monthly_distributions.all())
+        self.assertEqual(m_dists[0].hours, 500.0)
+        self.assertEqual(m_dists[1].hours, 500.0)
+        self.assertEqual(m_dists[2].hours, 500.0)
+
+
