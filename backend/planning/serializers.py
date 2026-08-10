@@ -1,11 +1,32 @@
 from rest_framework import serializers
-from .models import PlanningVersion, Benchmark, Project, ProjectTask, ProjectTaskMonthlyDistribution
+from .models import (
+    CapacityAdjustment,
+    PlanningVersion,
+    Benchmark,
+    Project,
+    ProjectTask,
+    ProjectTaskMonthlyDistribution,
+)
 from .services import ProjectPlanningEngine
 
 class PlanningVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanningVersion
         fields = '__all__'
+
+class CapacityAdjustmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CapacityAdjustment
+        fields = [
+            'id',
+            'department',
+            'year',
+            'month',
+            'buffer_hours',
+            'adjustment_hours',
+            'created_at',
+            'updated_at',
+        ]
 
 class BenchmarkSerializer(serializers.ModelSerializer):
     class Meta:

@@ -48,6 +48,7 @@ class ManualInputConfig(models.Model):
 
 class Project(models.Model):
     project_name = models.CharField(max_length=256)
+    location = models.CharField(max_length=128, blank=True, default="")
     project_number = models.CharField(max_length=128, unique=True)
     equipment_name = models.CharField(max_length=256, blank=True, default="")
     equipment_weight = models.CharField(max_length=128, blank=True, default="")
@@ -111,4 +112,18 @@ class ProjectTaskMonthlyDistribution(models.Model):
         return f"{self.task.task_name} - Month {self.month_index} ({self.month_label}): {self.hours} hrs ({self.percentage}%)"
 
 
+class CapacityAdjustment(models.Model):
+    department = models.CharField(max_length=100)
+    year = models.IntegerField(default=2026)
+    month = models.CharField(max_length=20)
+    buffer_hours = models.FloatField(default=0)
+    adjustment_hours = models.FloatField(default=0)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('department', 'year', 'month')
+
+    def __str__(self):
+        return f"{self.department} - {self.month}"
