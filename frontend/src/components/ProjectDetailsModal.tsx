@@ -16,6 +16,9 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
+  Sliders,
+  PlusCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { updateBackendProject } from '../lib/api';
 
@@ -50,6 +53,11 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     durationMonths: 3,
     priority: 'Medium',
     status: 'Planned',
+    // In-Progress Adjustment & Buffer inputs (Only in Edit mode)
+    adjustmentMonthIndex: '',
+    actualUtilizedHours: '',
+    bufferMonthIndex: '',
+    bufferHours: '',
   });
 
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -77,6 +85,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         durationMonths: taskObj.duration_months || 3,
         priority: project.priority || 'Medium',
         status: project.status || 'Planned',
+        adjustmentMonthIndex: taskObj.adjustment_month_index || taskObj.adjustmentMonthIndex || '',
+        actualUtilizedHours: taskObj.actual_utilized_hours !== undefined && taskObj.actual_utilized_hours !== null ? taskObj.actual_utilized_hours : '',
+        bufferMonthIndex: taskObj.buffer_month_index || taskObj.bufferMonthIndex || '',
+        bufferHours: taskObj.buffer_hours || taskObj.bufferHours || '',
       });
       setSaveMsg('');
     }
@@ -97,6 +109,11 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+
+    const adjMonth = formData.adjustmentMonthIndex ? Number(formData.adjustmentMonthIndex) : null;
+    const actualHours = formData.actualUtilizedHours !== '' && formData.actualUtilizedHours !== null ? Number(formData.actualUtilizedHours) : null;
+    const bufMonth = formData.bufferMonthIndex ? Number(formData.bufferMonthIndex) : null;
+    const bufHours = formData.bufferHours ? Number(formData.bufferHours) : 0;
 
     const updatedPayload = {
       projectName: formData.projectName,
@@ -129,6 +146,14 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           smi: formData.smi,
           labour_supply: formData.labourSupply,
           job_contractor: formData.jobContractor,
+          adjustmentMonthIndex: adjMonth,
+          adjustment_month_index: adjMonth,
+          actualUtilizedHours: actualHours,
+          actual_utilized_hours: actualHours,
+          bufferMonthIndex: bufMonth,
+          buffer_month_index: bufMonth,
+          bufferHours: bufHours,
+          buffer_hours: bufHours,
         },
       ],
     };
@@ -170,7 +195,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     }
 
     setIsSaving(false);
-    setSaveMsg('Project updated successfully!');
+    setSaveMsg('Project updated with adjustment & buffer calculations!');
     onProjectUpdated();
 
     setTimeout(() => {
@@ -179,47 +204,83 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     }, 800);
   };
 
-  // Preview local monthly calculation
+  // Preview local monthly calculation with Adjustment & Buffer
   const getPreviewMonths = () => {
-    const hours = Number(formData.plannedHours) || 0;
+    const baseHours = Number(formData.plannedHours) || 0;
     const duration = Number(formData.durationMonths) || 3;
-    if (hours <= 0 || duration <= 0) return [];
+    if (baseHours <= 0 || duration <= 0) return [];
 
     const startDt = formData.startDate ? new Date(formData.startDate) : new Date(2026, 7, 1);
-    const result: any[] = [];
 
-    if (duration === 1) {
-      result.push({
-        month: startDt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        hours: hours,
-        pct: 100,
-        index: 1,
-      });
-      return result;
-    }
+    // 1. Baseline
+    let m1Base = Math.round(baseHours * 0.15 * 100) / 100;
+    let remBaseTotal = baseHours - m1Base;
+    let remCount = duration - 1;
+    let baseRemaining = remCount > 0 ? Math.round((remBaseTotal / remCount) * 100) / 100 : 0;
 
-    const m1Hours = Math.round(hours * 0.15 * 100) / 100;
-    const remainingHours = hours - m1Hours;
-    const remainingMonthsCount = duration - 1;
-    const baseRemaining = Math.round((remainingHours / remainingMonthsCount) * 100) / 100;
-    let accumulated = m1Hours;
-
-    for (let i = 0; i < duration; i++) {
-      const d = new Date(startDt.getFullYear(), startDt.getMonth() + i, 1);
-      const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      if (i === 0) {
-        result.push({ month: label, hours: m1Hours, pct: 15.0, index: 1 });
+    let monthlyHours: number[] = [m1Base];
+    for (let i = 1; i < duration; i++) {
+      if (i === duration - 1) {
+        let sumSoFar = monthlyHours.reduce((a, b) => a + b, 0);
+        monthlyHours.push(Math.round((baseHours - sumSoFar) * 100) / 100);
       } else {
-        let mH = baseRemaining;
-        if (i === duration - 1) {
-          mH = Math.round((hours - accumulated) * 100) / 100;
-        }
-        accumulated += mH;
-        const pct = Math.round((mH / hours) * 1000) / 10;
-        result.push({ month: label, hours: mH, pct, index: i + 1 });
+        monthlyHours.push(baseRemaining);
       }
     }
-    return result;
+
+    // 2. Adjustment
+    const adjIdx = formData.adjustmentMonthIndex ? Number(formData.adjustmentMonthIndex) - 1 : -1;
+    const actualH = formData.actualUtilizedHours !== '' && formData.actualUtilizedHours !== null ? Number(formData.actualUtilizedHours) : null;
+    let isAdjustedArr = new Array(duration).fill(false);
+
+    if (adjIdx >= 0 && adjIdx < duration && actualH !== null) {
+      isAdjustedArr[adjIdx] = true;
+      const plannedVal = monthlyHours[adjIdx];
+      const diff = plannedVal - actualH;
+      monthlyHours[adjIdx] = actualH;
+
+      const subCount = duration - (adjIdx + 1);
+      if (subCount > 0) {
+        const addPerMonth = Math.round((diff / subCount) * 100) / 100;
+        let accDiff = 0;
+        for (let k = adjIdx + 1; k < duration; k++) {
+          if (k === duration - 1) {
+            monthlyHours[k] = Math.round((monthlyHours[k] + (diff - accDiff)) * 100) / 100;
+          } else {
+            monthlyHours[k] = Math.round((monthlyHours[k] + addPerMonth) * 100) / 100;
+            accDiff += addPerMonth;
+          }
+        }
+      }
+    }
+
+    // 3. Buffer
+    const bufIdx = formData.bufferMonthIndex ? Number(formData.bufferMonthIndex) - 1 : -1;
+    const bufH = formData.bufferHours ? Number(formData.bufferHours) : 0;
+    let isBufferArr = new Array(duration).fill(false);
+
+    if (bufIdx >= 0 && bufIdx < duration && bufH > 0) {
+      isBufferArr[bufIdx] = true;
+      monthlyHours[bufIdx] = Math.round((monthlyHours[bufIdx] + bufH) * 100) / 100;
+    }
+
+    const totalEffHours = monthlyHours.reduce((a, b) => a + b, 0);
+
+    // Build month items
+    return monthlyHours.map((h, i) => {
+      const d = new Date(startDt.getFullYear(), startDt.getMonth() + i, 1);
+      const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const pct = totalEffHours > 0 ? Math.round((h / totalEffHours) * 1000) / 10 : 0;
+
+      return {
+        month: label,
+        hours: h,
+        pct: pct,
+        index: i + 1,
+        isAdjusted: isAdjustedArr[i],
+        isBuffer: isBufferArr[i],
+      };
+    });
   };
 
   const previewMonths = getPreviewMonths();
@@ -230,8 +291,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(5, 11, 20, 0.82)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(5, 11, 20, 0.85)',
+        backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -242,12 +303,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         className="glass-panel"
         style={{
           width: '100%',
-          maxWidth: '900px',
-          maxHeight: '90vh',
+          maxWidth: '920px',
+          maxHeight: '92vh',
           overflowY: 'auto',
-          background: 'linear-gradient(145deg, rgba(13, 25, 48, 0.95) 0%, rgba(10, 16, 30, 0.98) 100%)',
+          background: 'linear-gradient(145deg, rgba(13, 25, 48, 0.96) 0%, rgba(10, 16, 30, 0.98) 100%)',
           borderRadius: '16px',
-          border: '1px solid rgba(0, 210, 255, 0.3)',
+          border: '1px solid rgba(0, 210, 255, 0.35)',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 210, 255, 0.15)',
           padding: '1.75rem',
         }}
@@ -283,7 +344,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               </h3>
             </div>
             <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              Manipulate project hours, task parameters, SMI, contractors, and review live monthly breakdown.
+              Manipulate project hours, task parameters, and introduce in-progress <strong>Adjustments</strong> & <strong>Buffers</strong>.
             </p>
           </div>
 
@@ -634,27 +695,201 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             </div>
           </div>
 
+          {/* IN-PROGRESS ADJUSTMENTS & BUFFERS (EXCLUSIVELY INSIDE EDIT MODAL) */}
+          <div
+            style={{
+              padding: '1.25rem',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(0, 210, 255, 0.08) 100%)',
+              borderRadius: '12px',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+              <Sliders size={18} color="var(--accent-emerald)" />
+              <h4 style={{ margin: 0, color: '#ffffff', fontSize: '0.95rem', fontWeight: 800 }}>
+                In-Progress Capacity Adjustments & Buffers
+              </h4>
+              <span style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)', padding: '0.15rem 0.5rem', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '12px', fontWeight: 700 }}>
+                Edit Progress Feature
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              
+              {/* 1. ADJUSTMENT INPUT BOX */}
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'rgba(10, 16, 30, 0.7)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f59e0b', fontSize: '0.82rem', fontWeight: 800, marginBottom: '0.75rem' }}>
+                  <TrendingUp size={16} /> 1. Capacity Utilization Adjustment
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                      Adjustment After Month
+                    </label>
+                    <select
+                      name="adjustmentMonthIndex"
+                      value={formData.adjustmentMonthIndex}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem 0.7rem',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '0.82rem',
+                      }}
+                    >
+                      <option value="">No Adjustment</option>
+                      {Array.from({ length: Number(formData.durationMonths) || 3 }).map((_, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          Month {idx + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                      Actual Utilized Hours in Month {formData.adjustmentMonthIndex || 1}
+                    </label>
+                    <input
+                      type="number"
+                      name="actualUtilizedHours"
+                      placeholder="e.g. 500 (planned was 750)"
+                      value={formData.actualUtilizedHours}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem 0.7rem',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '6px',
+                        color: '#f59e0b',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. BUFFER INPUT BOX */}
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'rgba(10, 16, 30, 0.7)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#a855f7', fontSize: '0.82rem', fontWeight: 800, marginBottom: '0.75rem' }}>
+                  <PlusCircle size={16} /> 2. Introduced Buffer Hours
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                      Buffer Introduced In Month
+                    </label>
+                    <select
+                      name="bufferMonthIndex"
+                      value={formData.bufferMonthIndex}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem 0.7rem',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '0.82rem',
+                      }}
+                    >
+                      <option value="">No Buffer</option>
+                      {Array.from({ length: Number(formData.durationMonths) || 3 }).map((_, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          Month {idx + 1}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                      Extra Buffer Capacity (Hours)
+                    </label>
+                    <input
+                      type="number"
+                      name="bufferHours"
+                      placeholder="e.g. 500 extra hours"
+                      value={formData.bufferHours}
+                      onChange={handleChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem 0.7rem',
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        borderRadius: '6px',
+                        color: '#a855f7',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           {/* DYNAMIC MONTHLY BREAKDOWN PREVIEW */}
           {previewMonths.length > 0 && (
             <div
               style={{
-                background: 'rgba(10, 16, 30, 0.7)',
+                background: 'rgba(10, 16, 30, 0.75)',
                 borderRadius: '10px',
                 padding: '1rem',
-                border: '1px solid rgba(0, 210, 255, 0.2)',
+                border: '1px solid rgba(0, 210, 255, 0.25)',
               }}
             >
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '0.6rem' }}>
-                Calculated Monthly Breakdown Preview ({formData.task} 15% Ramp-up Rule)
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                  Calculated Monthly Breakdown Preview ({formData.task} Logic Engine)
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Total Capacity: <strong style={{ color: '#fff' }}>{previewMonths.reduce((a, b) => a + b.hours, 0).toLocaleString()} hrs</strong>
+                </div>
               </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${previewMonths.length}, 1fr)`, gap: '0.6rem' }}>
                 {previewMonths.map((m) => (
                   <div
                     key={m.index}
                     style={{
                       padding: '0.6rem',
-                      background: m.index === 1 ? 'rgba(0, 210, 255, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                      border: m.index === 1 ? '1px solid var(--accent-cyan)' : '1px solid rgba(255, 255, 255, 0.08)',
+                      background: m.isAdjusted
+                        ? 'rgba(245, 158, 11, 0.15)'
+                        : m.isBuffer
+                        ? 'rgba(168, 85, 247, 0.15)'
+                        : m.index === 1
+                        ? 'rgba(0, 210, 255, 0.12)'
+                        : 'rgba(255, 255, 255, 0.03)',
+                      border: m.isAdjusted
+                        ? '1px solid #f59e0b'
+                        : m.isBuffer
+                        ? '1px solid #a855f7'
+                        : m.index === 1
+                        ? '1px solid var(--accent-cyan)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
                       borderRadius: '6px',
                       textAlign: 'center',
                     }}
@@ -662,11 +897,13 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                     <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                       Month {m.index}: {m.month}
                     </div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: m.index === 1 ? 'var(--accent-cyan)' : '#fff', marginTop: '0.15rem' }}>
+
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: m.isAdjusted ? '#f59e0b' : m.isBuffer ? '#a855f7' : m.index === 1 ? 'var(--accent-cyan)' : '#fff', marginTop: '0.15rem' }}>
                       {m.hours.toLocaleString()} hrs
                     </div>
-                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: m.index === 1 ? '#00d2ff' : '#10b981' }}>
-                      {m.pct}% {m.index === 1 ? '(15% Ramp-up)' : '(Equal Split)'}
+
+                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: m.isAdjusted ? '#f59e0b' : m.isBuffer ? '#a855f7' : m.index === 1 ? '#00d2ff' : '#10b981' }}>
+                      {m.isAdjusted ? '(Adjusted)' : m.isBuffer ? '(Buffer Added)' : m.index === 1 ? '(15% Ramp-up)' : '(Equal Split)'}
                     </div>
                   </div>
                 ))}

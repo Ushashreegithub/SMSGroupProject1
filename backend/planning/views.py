@@ -399,11 +399,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
         allocated_hours = serializer.validated_data['allocated_hours']
         duration_months = serializer.validated_data['duration_months']
         start_date = serializer.validated_data.get('start_date', '2026-08-01')
+        adj_month = serializer.validated_data.get('adjustment_month_index')
+        actual_hours = serializer.validated_data.get('actual_utilized_hours')
+        buf_month = serializer.validated_data.get('buffer_month_index')
+        buf_hours = serializer.validated_data.get('buffer_hours', 0.0)
 
         monthly_breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
             allocated_hours=allocated_hours,
             duration_months=duration_months,
-            start_date_str=start_date
+            start_date_str=start_date,
+            adjustment_month_index=adj_month,
+            actual_utilized_hours=actual_hours,
+            buffer_month_index=buf_month,
+            buffer_hours=buf_hours
         )
 
         return Response({
@@ -412,7 +420,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "allocated_hours": allocated_hours,
             "duration_months": duration_months,
             "start_date": start_date,
-            "rule_applied": "15% Month 1 ramp-up, remaining divided equally across Months 2 to N",
+            "rule_applied": "15% Month 1 ramp-up, with adjustment and buffer logic applied",
             "monthly_breakdown": monthly_breakdown
         }, status=status.HTTP_200_OK)
 
@@ -452,6 +460,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 'smi': data.get('smi', ''),
                 'labour_supply': data.get('labourSupply', data.get('labour_supply', '')),
                 'job_contractor': data.get('jobContractor', data.get('job_contractor', '')),
+                'adjustment_month_index': data.get('adjustmentMonthIndex') or data.get('adjustment_month_index'),
+                'actual_utilized_hours': data.get('actualUtilizedHours') or data.get('actual_utilized_hours'),
+                'buffer_month_index': data.get('bufferMonthIndex') or data.get('buffer_month_index'),
+                'buffer_hours': data.get('bufferHours') or data.get('buffer_hours', 0.0),
             }]
 
         for t_data in raw_tasks:
@@ -460,6 +472,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
             t_hours = float(t_data.get('allocated_hours') or t_data.get('hours', total_planned_hours))
             t_duration = int(t_data.get('duration_months') or t_data.get('duration', 3))
             t_start = t_data.get('start_date') or project.zero_date
+            adj_m = t_data.get('adjustment_month_index') or t_data.get('adjustmentMonthIndex')
+            act_h = t_data.get('actual_utilized_hours') or t_data.get('actualUtilizedHours')
+            buf_m = t_data.get('buffer_month_index') or t_data.get('bufferMonthIndex')
+            buf_h = float(t_data.get('buffer_hours') or t_data.get('bufferHours') or 0.0)
 
             task_obj = ProjectTask.objects.create(
                 project=project,
@@ -472,6 +488,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 smi=t_data.get('smi', ''),
                 labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
                 job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
+                adjustment_month_index=adj_m,
+                actual_utilized_hours=act_h,
+                buffer_month_index=buf_m,
+                buffer_hours=buf_h,
             )
 
             # Perform monthly calculation for Welding
@@ -479,7 +499,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
                     allocated_hours=t_hours,
                     duration_months=t_duration,
-                    start_date_str=task_obj.start_date
+                    start_date_str=task_obj.start_date,
+                    adjustment_month_index=adj_m,
+                    actual_utilized_hours=act_h,
+                    buffer_month_index=buf_m,
+                    buffer_hours=buf_h
                 )
                 for item in breakdown:
                     ProjectTaskMonthlyDistribution.objects.create(
@@ -488,7 +512,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
                         month_label=item['month_label'],
                         date=item['date'],
                         hours=item['hours'],
-                        percentage=item['percentage']
+                        percentage=item['percentage'],
+                        is_adjusted=item.get('is_adjusted', False),
+                        is_buffer_added=item.get('is_buffer_added', False)
                     )
 
         serializer = self.get_serializer(project)
@@ -533,7 +559,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 'location': data.get('location', ''),
                 'smi': data.get('smi', ''),
                 'labour_supply': data.get('labourSupply', data.get('labour_supply', '')),
-                'job_contractor': data.get('jobContractor', data.get('job_contractor', '')),
+                'job_contractor': data.get('jobContractor', data.get('jobContractor', '')),
+                'adjustment_month_index': data.get('adjustmentMonthIndex') or data.get('adjustment_month_index'),
+                'actual_utilized_hours': data.get('actualUtilizedHours') or data.get('actual_utilized_hours'),
+                'buffer_month_index': data.get('bufferMonthIndex') or data.get('buffer_month_index'),
+                'buffer_hours': data.get('bufferHours') or data.get('buffer_hours', 0.0),
             }]
 
         if raw_tasks:
@@ -544,6 +574,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 t_hours = float(t_data.get('allocated_hours') or t_data.get('hours', instance.total_planned_hours))
                 t_duration = int(t_data.get('duration_months') or t_data.get('duration', 3))
                 t_start = t_data.get('start_date') or instance.zero_date
+                adj_m = t_data.get('adjustment_month_index') or t_data.get('adjustmentMonthIndex')
+                act_h = t_data.get('actual_utilized_hours') or t_data.get('actualUtilizedHours')
+                buf_m = t_data.get('buffer_month_index') or t_data.get('bufferMonthIndex')
+                buf_h = float(t_data.get('buffer_hours') or t_data.get('bufferHours') or 0.0)
 
                 task_obj = ProjectTask.objects.create(
                     project=instance,
@@ -556,13 +590,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     smi=t_data.get('smi', ''),
                     labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
                     job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
+                    adjustment_month_index=adj_m,
+                    actual_utilized_hours=act_h,
+                    buffer_month_index=buf_m,
+                    buffer_hours=buf_h,
                 )
 
                 if t_code in ['welding', 'heavy_welding'] or 'weld' in t_name.lower():
                     breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
                         allocated_hours=t_hours,
                         duration_months=t_duration,
-                        start_date_str=task_obj.start_date
+                        start_date_str=task_obj.start_date,
+                        adjustment_month_index=adj_m,
+                        actual_utilized_hours=act_h,
+                        buffer_month_index=buf_m,
+                        buffer_hours=buf_h
                     )
                     for item in breakdown:
                         ProjectTaskMonthlyDistribution.objects.create(
@@ -571,10 +613,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
                             month_label=item['month_label'],
                             date=item['date'],
                             hours=item['hours'],
-                            percentage=item['percentage']
+                            percentage=item['percentage'],
+                            is_adjusted=item.get('is_adjusted', False),
+                            is_buffer_added=item.get('is_buffer_added', False)
                         )
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
 
 

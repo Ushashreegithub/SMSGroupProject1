@@ -82,6 +82,12 @@ class ProjectTask(models.Model):
     labour_supply = models.CharField(max_length=128, blank=True, default="")
     job_contractor = models.CharField(max_length=128, blank=True, default="")
     
+    # Progress Adjustments & Buffers (Only introduced during Project Progress edit)
+    adjustment_month_index = models.IntegerField(null=True, blank=True)
+    actual_utilized_hours = models.FloatField(null=True, blank=True)
+    buffer_month_index = models.IntegerField(null=True, blank=True)
+    buffer_hours = models.FloatField(default=0.0)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -95,11 +101,14 @@ class ProjectTaskMonthlyDistribution(models.Model):
     date = models.DateField(null=True, blank=True)
     hours = models.FloatField(default=0.0)
     percentage = models.FloatField(default=0.0)
+    is_adjusted = models.BooleanField(default=False)
+    is_buffer_added = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['month_index']
 
     def __str__(self):
         return f"{self.task.task_name} - Month {self.month_index} ({self.month_label}): {self.hours} hrs ({self.percentage}%)"
+
 
 
