@@ -1,11 +1,35 @@
 from rest_framework import serializers
-from .models import PlanningVersion, Benchmark, Project, ProjectTask, ProjectTaskMonthlyDistribution
+from rest_framework import serializers
+
+from .models import (
+    CapacityAdjustment,
+    PlanningVersion,
+    Benchmark,
+    Project,
+    ProjectTask,
+    ProjectTaskMonthlyDistribution,
+)
 from .services import ProjectPlanningEngine
 
 class PlanningVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlanningVersion
         fields = '__all__'
+
+class CapacityAdjustmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+     model = CapacityAdjustment
+    fields = [
+            'id',
+            'department',
+            'year',
+            'month',
+            'buffer_hours',
+            'adjustment_hours',
+            'created_at',
+            'updated_at',
+        ]      
 
 class BenchmarkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +53,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'project_name', 'project_number', 'equipment_name', 'equipment_weight', 'description', 'zero_date', 'cdd', 'project_manager', 'total_planned_hours', 'priority', 'status', 'tasks', 'created_at', 'updated_at']
+        fields = ['id', 'costumer_name', 'WBS_No.', 'equipment_name', 'equipment_weight', 'description', 'zero_date', 'cdd', 'project_manager', 'total_planned_hours', 'priority', 'status', 'tasks', 'created_at', 'updated_at']
 
 class WeldingCalculationPreviewSerializer(serializers.Serializer):
     allocated_hours = serializers.FloatField(required=True, min_value=0.1)
