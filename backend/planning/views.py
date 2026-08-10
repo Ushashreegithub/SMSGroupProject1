@@ -6,10 +6,16 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .models import PlanningVersion, Benchmark, ManualInputConfig
-from .serializers import PlanningVersionSerializer, BenchmarkSerializer
+from .models import PlanningVersion, Benchmark, ManualInputConfig, Project, ProjectTask, ProjectTaskMonthlyDistribution
+from .serializers import (
+    PlanningVersionSerializer, BenchmarkSerializer, ProjectSerializer,
+    ProjectTaskSerializer, ProjectTaskMonthlyDistributionSerializer,
+    WeldingCalculationPreviewSerializer
+)
+from .services import ProjectPlanningEngine
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+
 
 
 MONTHS_AUG_2026 = [
@@ -377,3 +383,198 @@ def login_api(request):
             "is_superuser": user.is_superuser,
         }
     })
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'])
+    def preview_welding_calculation(self, request):
+        serializer = WeldingCalculationPreviewSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        allocated_hours = serializer.validated_data['allocated_hours']
+        duration_months = serializer.validated_data['duration_months']
+        start_date = serializer.validated_data.get('start_date', '2026-08-01')
+
+        monthly_breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+            allocated_hours=allocated_hours,
+            duration_months=duration_months,
+            start_date_str=start_date
+        )
+
+        return Response({
+            "status": "success",
+            "task_name": "Welding",
+            "allocated_hours": allocated_hours,
+            "duration_months": duration_months,
+            "start_date": start_date,
+            "rule_applied": "15% Month 1 ramp-up, remaining divided equally across Months 2 to N",
+            "monthly_breakdown": monthly_breakdown
+        }, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        project_name = data.get('projectName') or data.get('project_name')
+        project_number = data.get('projectNumber') or data.get('project_number')
+        
+        if not project_name or not project_number:
+            return Response({"error": "projectName and projectNumber are required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        total_planned_hours = float(data.get('plannedHours') or data.get('total_planned_hours', 0.0))
+        
+        project = Project.objects.create(
+            project_name=project_name,
+            project_number=project_number,
+            equipment_name=data.get('equipmentName', data.get('equipment_name', '')),
+            equipment_weight=data.get('equipmentWeight', data.get('equipment_weight', '')),
+            description=data.get('description', ''),
+            zero_date=data.get('startDate') or data.get('zero_date') or None,
+            cdd=data.get('endDate') or data.get('cdd') or None,
+            project_manager=data.get('projectManager', data.get('project_manager', '')),
+            total_planned_hours=total_planned_hours,
+            priority=data.get('priority', 'Medium'),
+            status=data.get('status', 'Planned'),
+        )
+
+        raw_tasks = data.get('tasks', [])
+        if not raw_tasks and data.get('task'):
+            raw_tasks = [{
+                'task_name': data.get('task'),
+                'task_code': str(data.get('task')).lower().replace(' ', '_'),
+                'allocated_hours': total_planned_hours,
+                'duration_months': int(data.get('duration_months', 3)),
+                'start_date': project.zero_date,
+                'location': data.get('location', ''),
+                'smi': data.get('smi', ''),
+                'labour_supply': data.get('labourSupply', data.get('labour_supply', '')),
+                'job_contractor': data.get('jobContractor', data.get('job_contractor', '')),
+            }]
+
+        for t_data in raw_tasks:
+            t_name = t_data.get('task_name') or t_data.get('name') or t_data.get('task', 'Welding')
+            t_code = t_data.get('task_code') or str(t_name).lower().replace(' ', '_')
+            t_hours = float(t_data.get('allocated_hours') or t_data.get('hours', total_planned_hours))
+            t_duration = int(t_data.get('duration_months') or t_data.get('duration', 3))
+            t_start = t_data.get('start_date') or project.zero_date
+
+            task_obj = ProjectTask.objects.create(
+                project=project,
+                task_name=t_name,
+                task_code=t_code,
+                allocated_hours=t_hours,
+                duration_months=t_duration,
+                start_date=t_start if isinstance(t_start, str) else (t_start.strftime("%Y-%m-%d") if t_start else None),
+                location=t_data.get('location', ''),
+                smi=t_data.get('smi', ''),
+                labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
+                job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
+            )
+
+            # Perform monthly calculation for Welding
+            if t_code in ['welding', 'heavy_welding'] or 'weld' in t_name.lower():
+                breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+                    allocated_hours=t_hours,
+                    duration_months=t_duration,
+                    start_date_str=task_obj.start_date
+                )
+                for item in breakdown:
+                    ProjectTaskMonthlyDistribution.objects.create(
+                        task=task_obj,
+                        month_index=item['month_index'],
+                        month_label=item['month_label'],
+                        date=item['date'],
+                        hours=item['hours'],
+                        percentage=item['percentage']
+                    )
+
+        serializer = self.get_serializer(project)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+
+        if 'projectName' in data or 'project_name' in data:
+            instance.project_name = data.get('projectName') or data.get('project_name')
+        if 'equipmentName' in data or 'equipment_name' in data:
+            instance.equipment_name = data.get('equipmentName') or data.get('equipment_name')
+        if 'equipmentWeight' in data or 'equipment_weight' in data:
+            instance.equipment_weight = data.get('equipmentWeight') or data.get('equipment_weight')
+        if 'description' in data:
+            instance.description = data.get('description', '')
+        if 'startDate' in data or 'zero_date' in data:
+            instance.zero_date = data.get('startDate') or data.get('zero_date') or None
+        if 'endDate' in data or 'cdd' in data:
+            instance.cdd = data.get('endDate') or data.get('cdd') or None
+        if 'projectManager' in data or 'project_manager' in data:
+            instance.project_manager = data.get('projectManager') or data.get('project_manager')
+        if 'plannedHours' in data or 'total_planned_hours' in data:
+            instance.total_planned_hours = float(data.get('plannedHours') or data.get('total_planned_hours', 0))
+        if 'priority' in data:
+            instance.priority = data.get('priority')
+        if 'status' in data:
+            instance.status = data.get('status')
+            
+        instance.save()
+
+        raw_tasks = data.get('tasks', [])
+        if not raw_tasks and data.get('task'):
+            raw_tasks = [{
+                'task_name': data.get('task'),
+                'task_code': str(data.get('task')).lower().replace(' ', '_'),
+                'allocated_hours': instance.total_planned_hours,
+                'duration_months': int(data.get('duration_months', 3)),
+                'start_date': instance.zero_date,
+                'location': data.get('location', ''),
+                'smi': data.get('smi', ''),
+                'labour_supply': data.get('labourSupply', data.get('labour_supply', '')),
+                'job_contractor': data.get('jobContractor', data.get('job_contractor', '')),
+            }]
+
+        if raw_tasks:
+            instance.tasks.all().delete()
+            for t_data in raw_tasks:
+                t_name = t_data.get('task_name') or t_data.get('name') or t_data.get('task', 'Welding')
+                t_code = t_data.get('task_code') or str(t_name).lower().replace(' ', '_')
+                t_hours = float(t_data.get('allocated_hours') or t_data.get('hours', instance.total_planned_hours))
+                t_duration = int(t_data.get('duration_months') or t_data.get('duration', 3))
+                t_start = t_data.get('start_date') or instance.zero_date
+
+                task_obj = ProjectTask.objects.create(
+                    project=instance,
+                    task_name=t_name,
+                    task_code=t_code,
+                    allocated_hours=t_hours,
+                    duration_months=t_duration,
+                    start_date=t_start if isinstance(t_start, str) else (t_start.strftime("%Y-%m-%d") if t_start else None),
+                    location=t_data.get('location', ''),
+                    smi=t_data.get('smi', ''),
+                    labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
+                    job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
+                )
+
+                if t_code in ['welding', 'heavy_welding'] or 'weld' in t_name.lower():
+                    breakdown = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+                        allocated_hours=t_hours,
+                        duration_months=t_duration,
+                        start_date_str=task_obj.start_date
+                    )
+                    for item in breakdown:
+                        ProjectTaskMonthlyDistribution.objects.create(
+                            task=task_obj,
+                            month_index=item['month_index'],
+                            month_label=item['month_label'],
+                            date=item['date'],
+                            hours=item['hours'],
+                            percentage=item['percentage']
+                        )
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
