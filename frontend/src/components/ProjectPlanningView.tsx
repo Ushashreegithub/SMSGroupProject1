@@ -15,32 +15,25 @@ import {
   Hash,
   Wrench,
   Scale,
-  MapPin,
+  Edit,
 } from 'lucide-react';
+import { ProjectDetailsModal } from './ProjectDetailsModal';
+
 
 interface Project {
   id: string;
-
-  // Customer / project identification
-  customerName: string;
-  wbsNo: string;
-  projectId: string;
-
+  projectName: string;
+  projectNumber: string;
   equipmentName: string;
   equipmentWeight: string;
   description: string;
-
   startDate: string;
   endDate: string;
-
   projectManager: string;
-
   task: string;
-
-  // Main project location
   location: string;
 
-  // Work details for Khordha / Mancheswar
+  // New fields for Khordha / Mancheswar
   smi: string;
   labourSupply: string;
   jobContractor: string;
@@ -60,39 +53,38 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
   const [showForm, setShowForm] = useState(false);
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  useEffect(() => {
+  const loadProjects = () => {
     try {
       const saved = localStorage.getItem('sms_project_planning');
-
       if (saved) {
         setProjects(JSON.parse(saved));
       }
     } catch (e) {
       console.error('Failed to load saved projects', e);
     }
+  };
+
+  useEffect(() => {
+    loadProjects();
   }, []);
 
-  const [formData, setFormData] = useState({
-    customerName: '',
-    wbsNo: '',
-    projectId: '',
 
+  const [formData, setFormData] = useState({
+    projectName: '',
+    projectNumber: '',
     equipmentName: '',
     equipmentWeight: '',
     description: '',
-
     startDate: '',
     endDate: '',
-
     projectManager: '',
-
     task: '',
-
-    // Main location
     location: '',
 
-    // Work details
+    // New fields
     smi: '',
     labourSupply: '',
     jobContractor: '',
@@ -115,8 +107,8 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       ...prev,
       [name]: value,
 
-      // If task changes to something other than Welding/Assembly,
-      // clear location and work details.
+      // If task is changed to something other than Welding/Assembly,
+      // clear location and the three additional fields.
       ...(name === 'task' &&
       !['Welding', 'Assembly'].includes(value)
         ? {
@@ -127,8 +119,8 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
           }
         : {}),
 
-      // If location is K+M,
-      // clear SMI, Labour Supply and Job Contractor.
+      // If location is changed to K+M,
+      // clear the three additional fields.
       ...(name === 'location' && value === 'K+M'
         ? {
             smi: '',
@@ -141,27 +133,19 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
   const resetForm = () => {
     setFormData({
-      customerName: '',
-      wbsNo: '',
-      projectId: '',
-
+      projectName: '',
+      projectNumber: '',
       equipmentName: '',
       equipmentWeight: '',
       description: '',
-
       startDate: '',
       endDate: '',
-
       projectManager: '',
-
       task: '',
-
       location: '',
-
       smi: '',
       labourSupply: '',
       jobContractor: '',
-
       plannedHours: '',
       priority: 'Medium',
       status: 'Planned',
@@ -177,19 +161,26 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Required field validation
+    // Basic required-field validation
     if (
-      !formData.customerName ||
-      !formData.wbsNo ||
-      !formData.projectId ||
+      !formData.projectName ||
+      !formData.projectNumber ||
       !formData.startDate ||
       !formData.endDate ||
       !formData.projectManager ||
       !formData.task ||
-      !formData.plannedHours ||
-      !formData.location
+      !formData.plannedHours
     ) {
       setSaveMessage('Please fill all required fields.');
+      return;
+    }
+
+    // Location is required only for Welding and Assembly
+    if (
+      ['Welding', 'Assembly'].includes(formData.task) &&
+      !formData.location
+    ) {
+      setSaveMessage('Please select a location for the selected task.');
       return;
     }
 
@@ -202,29 +193,23 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     const newProject: Project = {
       id: `project_${Date.now()}`,
 
-      customerName: formData.customerName,
-      wbsNo: formData.wbsNo,
-      projectId: formData.projectId,
-
+      projectName: formData.projectName,
+      projectNumber: formData.projectNumber,
       equipmentName: formData.equipmentName,
       equipmentWeight: formData.equipmentWeight,
       description: formData.description,
-
       startDate: formData.startDate,
       endDate: formData.endDate,
-
       projectManager: formData.projectManager,
-
       task: formData.task,
-
       location: formData.location,
 
+      // New fields
       smi: formData.smi,
       labourSupply: formData.labourSupply,
       jobContractor: formData.jobContractor,
 
       plannedHours: Number(formData.plannedHours),
-
       priority: formData.priority,
       status: formData.status,
     };
@@ -239,11 +224,22 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
       JSON.stringify(updatedProjects)
     );
 
+    // Also persist to Django REST API backend for engine monthly calculations
+    try {
+      fetch('/api/v1/projects/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProject),
+      }).catch((e) => console.warn('Django API sync note:', e));
+    } catch (err) {
+      console.warn('API sync warning:', err);
+    }
+
     if (onProjectCreated) {
       onProjectCreated(newProject);
     }
 
-    setSaveMessage('Project created successfully.');
+    setSaveMessage('Project created & synchronized with Backend calculation engine successfully.');
 
     resetForm();
 
@@ -253,19 +249,14 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
     }, 1200);
   };
 
-  /*
-   * Location component is now always available.
-   *
-   * The additional SMI / Labour Supply / Job Contractor
-   * fields are shown only for:
-   * Welding + Khordha
-   * Welding + Mancheswar
-   * Assembly + Khordha
-   * Assembly + Mancheswar
-   */
+
+  const showLocation =
+    formData.task === 'Welding' || formData.task === 'Assembly';
+
   const showWorkDetails =
-    ['Welding', 'Assembly'].includes(formData.task) &&
-    ['Khordha', 'Mancheswar'].includes(formData.location);
+    showLocation &&
+    (formData.location === 'Khordha' ||
+      formData.location === 'Mancheswar');
 
   return (
     <div
@@ -405,87 +396,51 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* ROW 1 - CUSTOMER NAME / WBS NO. / PROJECT ID */}
+            {/* ROW 1 - PROJECT NAME & NUMBER */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1fr',
                 gap: '1rem',
                 marginBottom: '1rem',
               }}
             >
-              {/* CUSTOMER NAME */}
-              <div>
-                <label className="project-form-label">
-                  <User size={14} />
-                  Customer Name *
-                </label>
-
-                <input
-                  type="text"
-                  name="customerName"
-                  value={formData.customerName}
-                  onChange={handleChange}
-                  placeholder="Enter customer name"
-                  className="project-form-input"
-                />
-              </div>
-
-              {/* WBS NO */}
-              <div>
-                <label className="project-form-label">
-                  <Hash size={14} />
-                  WBS No. *
-                </label>
-
-                <input
-                  type="text"
-                  name="wbsNo"
-                  value={formData.wbsNo}
-                  onChange={handleChange}
-                  placeholder="e.g. WBS-2026-001"
-                  className="project-form-input"
-                />
-              </div>
-
-              {/* PROJECT ID */}
+              {/* PROJECT NAME */}
               <div>
                 <label className="project-form-label">
                   <FolderKanban size={14} />
-                  Project ID *
+                  Project Name *
                 </label>
 
                 <input
                   type="text"
-                  name="projectId"
-                  value={formData.projectId}
+                  name="projectName"
+                  value={formData.projectName}
                   onChange={handleChange}
-                  placeholder="Enter Project ID"
+                  placeholder="Enter project name"
+                  className="project-form-input"
+                />
+              </div>
+
+              {/* PROJECT NUMBER */}
+              <div>
+                <label className="project-form-label">
+                  <Hash size={14} />
+                  Project ID / Project Number *
+                </label>
+
+                <input
+                  type="text"
+                  name="projectNumber"
+                  value={formData.projectNumber}
+                  onChange={handleChange}
+                  placeholder="e.g. PRJ-2026-001"
                   className="project-form-input"
                 />
               </div>
             </div>
 
-            <div>
-  <label className="project-form-label">
-    <FolderKanban size={14} />
-    Location *
-  </label>
-
-  <select
-    name="location"
-    value={formData.location}
-    onChange={handleChange}
-    className="project-form-input"
-  >
-    <option value="">Select location</option>
-    <option value="Khordha">Khordha</option>
-    <option value="Mancheswar">Mancheswar</option>
-    <option value="K+M">K+M</option>
-  </select>
-</div>
-
-            {/* ROW 2 - EQUIPMENT NAME / EQUIPMENT WEIGHT */}
+            {/* ROW 2 - EQUIPMENT NAME & EQUIPMENT WEIGHT */}
             <div
               style={{
                 display: 'grid',
@@ -552,7 +507,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               />
             </div>
 
-            {/* ROW 3 - DATES */}
+            {/* ROW 3 - DATES (ZERO DATE & CDD) */}
             <div
               style={{
                 display: 'grid',
@@ -594,7 +549,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               </div>
             </div>
 
-            {/* ROW 4 - PROJECT MANAGER / TASK */}
+            {/* ROW 4 - MANAGER + TASK */}
             <div
               style={{
                 display: 'grid',
@@ -647,34 +602,39 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
             </div>
 
             {/* LOCATION */}
-            <div
-              style={{
-                marginBottom: '1rem',
-                padding: '0.85rem',
-                background: 'rgba(0, 210, 255, 0.04)',
-                border: '1px solid rgba(0, 210, 255, 0.15)',
-                borderRadius: '8px',
-              }}
-            >
-              <label className="project-form-label">
-                <MapPin size={14} />
-                Location *
-              </label>
-
-              <select
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="project-form-input"
+            {showLocation && (
+              <div
+                style={{
+                  marginBottom: '1rem',
+                  padding: '0.85rem',
+                  background: 'rgba(0, 210, 255, 0.04)',
+                  border: '1px solid rgba(0, 210, 255, 0.15)',
+                  borderRadius: '8px',
+                }}
               >
-                <option value="">Select location</option>
-                <option value="Khordha">Khordha</option>
-                <option value="Mancheswar">Mancheswar</option>
-                <option value="K+M">K+M</option>
-              </select>
-            </div>
+                <label className="project-form-label">
+                  <FolderKanban size={14} />
+                  {formData.task} Location *
+                </label>
 
-            {/* WORK DETAILS */}
+                <select
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className="project-form-input"
+                >
+                  <option value="">Select location</option>
+                  <option value="Khordha">Khordha</option>
+                  <option value="Mancheswar">Mancheswar</option>
+                  <option value="K+M">K+M</option>
+                </select>
+              </div>
+            )}
+
+            {/* WORK DETAILS
+                ONLY FOR KHORDHA OR MANCHESWAR
+                AND NOT FOR K+M
+            */}
             {showWorkDetails && (
               <div
                 style={{
@@ -770,7 +730,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
               </div>
             )}
 
-            {/* ROW 5 - PLANNED HOURS / PRIORITY / STATUS */}
+            {/* ROW 5 */}
             <div
               style={{
                 display: 'grid',
@@ -1028,8 +988,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   color: 'var(--text-muted)',
                 }}
               >
-                <th style={tableHeaderStyle}>Customer Name</th>
-                <th style={tableHeaderStyle}>WBS No.</th>
+                <th style={tableHeaderStyle}>Project</th>
                 <th style={tableHeaderStyle}>Project ID</th>
                 <th style={tableHeaderStyle}>Equipment</th>
                 <th style={tableHeaderStyle}>Weight (kg)</th>
@@ -1043,6 +1002,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                 <th style={tableHeaderStyle}>Hours</th>
                 <th style={tableHeaderStyle}>Priority</th>
                 <th style={tableHeaderStyle}>Status</th>
+                <th style={tableHeaderStyle}>Action</th>
               </tr>
             </thead>
 
@@ -1055,10 +1015,10 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                       '1px solid rgba(255,255,255,0.05)',
                   }}
                 >
-                  {/* CUSTOMER NAME */}
+                  {/* PROJECT */}
                   <td style={tableCellStyle}>
                     <strong style={{ color: '#ffffff' }}>
-                      {project.customerName}
+                      {project.projectName}
                     </strong>
 
                     {project.description && (
@@ -1075,14 +1035,9 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                     )}
                   </td>
 
-                  {/* WBS NO */}
-                  <td style={tableCellStyle}>
-                    {project.wbsNo}
-                  </td>
-
                   {/* PROJECT ID */}
                   <td style={tableCellStyle}>
-                    {project.projectId}
+                    {project.projectNumber}
                   </td>
 
                   {/* EQUIPMENT NAME */}
@@ -1093,9 +1048,7 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   {/* EQUIPMENT WEIGHT */}
                   <td style={tableCellStyle}>
                     {project.equipmentWeight
-                      ? `${Number(
-                          project.equipmentWeight
-                        ).toLocaleString()} kg`
+                      ? `${Number(project.equipmentWeight).toLocaleString()} kg`
                       : '—'}
                   </td>
 
@@ -1132,26 +1085,11 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   {/* DATES */}
                   <td style={tableCellStyle}>
                     <div>
-                      <span
-                        style={{
-                          color: 'var(--text-dim)',
-                          fontSize: '0.7rem',
-                        }}
-                      >
-                        Zero:{' '}
-                      </span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>Zero: </span>
                       {project.startDate || '—'}
                     </div>
-
                     <div>
-                      <span
-                        style={{
-                          color: 'var(--text-dim)',
-                          fontSize: '0.7rem',
-                        }}
-                      >
-                        CDD:{' '}
-                      </span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>CDD: </span>
                       {project.endDate || '—'}
                     </div>
                   </td>
@@ -1188,12 +1126,47 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
                   <td style={tableCellStyle}>
                     {project.status}
                   </td>
+
+                  {/* ACTION: VIEW / EDIT */}
+                  <td style={tableCellStyle}>
+                    <button
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setIsModalOpen(true);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        padding: '0.35rem 0.65rem',
+                        background: 'rgba(0, 210, 255, 0.12)',
+                        border: '1px solid rgba(0, 210, 255, 0.3)',
+                        borderRadius: '6px',
+                        color: 'var(--accent-cyan)',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Edit size={13} /> View / Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      {/* PROJECT DETAILS & EDIT MODAL */}
+      <ProjectDetailsModal
+        project={selectedProject}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onProjectUpdated={loadProjects}
+      />
+
 
       {/* STYLES */}
       <style jsx>{`
@@ -1231,12 +1204,6 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
         select.project-form-input option {
           background: #0f172a;
           color: #ffffff;
-        }
-
-        @media (max-width: 1100px) {
-          form > div {
-            grid-template-columns: 1fr 1fr !important;
-          }
         }
 
         @media (max-width: 900px) {

@@ -416,12 +416,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             "monthly_breakdown": monthly_breakdown
         }, status=status.HTTP_200_OK)
 
-        
-    
-    
-
-    
-
     def create(self, request, *args, **kwargs):
         data = request.data
         project_name = data.get('projectName') or data.get('project_name')
