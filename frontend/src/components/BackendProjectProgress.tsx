@@ -14,18 +14,12 @@ import {
   User,
   Hash,
   Scale,
-  Edit,
-  Eye,
 } from 'lucide-react';
-import { fetchBackendProjects, BackendProject, ProjectTaskMonthlyDistribution } from '../lib/api';
-import { ProjectDetailsModal } from './ProjectDetailsModal';
+import { fetchBackendProjects, ProjectTaskMonthlyDistribution } from '../lib/api';
 
 export const BackendProjectProgress: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState<boolean>(true);
-  const [selectedProject, setSelectedProject] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-
 
   const loadProjects = async () => {
     setLoadingProjects(true);
@@ -46,7 +40,6 @@ export const BackendProjectProgress: React.FC = () => {
       const savedLocal = localStorage.getItem('sms_project_planning');
       if (savedLocal) {
         const parsed = JSON.parse(savedLocal);
-        // Merge any local projects not already in backend list
         parsed.forEach((lp: any) => {
           const exists = combinedProjects.some(
             (bp) => bp.project_number === lp.projectNumber || bp.projectNumber === lp.projectNumber
@@ -161,7 +154,7 @@ export const BackendProjectProgress: React.FC = () => {
                     fontWeight: 700,
                   }}
                 >
-                  <CheckCircle2 size={12} /> Synchronized with Project Planning
+                  <CheckCircle2 size={12} /> Read-Only Progress Display
                 </span>
               </div>
               <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
@@ -226,8 +219,10 @@ export const BackendProjectProgress: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {projects.map((proj, pIdx) => {
-              const projName = proj.project_name || proj.projectName || `Project #${pIdx + 1}`;
-              const projNum = proj.project_number || proj.projectNumber || `PRJ-2026-00${pIdx + 1}`;
+              const customerName = proj.customer_name || proj.customerName || proj.project_name || proj.projectName || `Customer #${pIdx + 1}`;
+              const wbsNo = proj.wbs_no || proj.wbsNo || proj.project_number || proj.projectNumber || `WBS-2026-00${pIdx + 1}`;
+              const projectCode = proj.project_code || proj.projectCode || wbsNo;
+              const location = proj.location || 'N/A';
               const eqName = proj.equipment_name || proj.equipmentName || 'N/A';
               const eqWeight = proj.equipment_weight || proj.equipmentWeight || 'N/A';
               const manager = proj.project_manager || proj.projectManager || 'N/A';
@@ -254,7 +249,7 @@ export const BackendProjectProgress: React.FC = () => {
 
               return (
                 <div
-                  key={proj.id || projNum + pIdx}
+                  key={proj.id || wbsNo + pIdx}
                   style={{
                     background: 'rgba(15, 23, 42, 0.65)',
                     borderRadius: '12px',
@@ -263,7 +258,7 @@ export const BackendProjectProgress: React.FC = () => {
                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-                  {/* PROJECT HEADER INFORMATION */}
+                  {/* PROJECT HEADER INFORMATION (READ ONLY) */}
                   <div
                     style={{
                       display: 'flex',
@@ -277,7 +272,7 @@ export const BackendProjectProgress: React.FC = () => {
                     }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                         <span
                           style={{
                             padding: '0.25rem 0.6rem',
@@ -290,10 +285,26 @@ export const BackendProjectProgress: React.FC = () => {
                             border: '1px solid rgba(0, 210, 255, 0.3)',
                           }}
                         >
-                          {projNum}
+                          WBS: {wbsNo}
                         </span>
+                        {projectCode && projectCode !== wbsNo && (
+                          <span
+                            style={{
+                              padding: '0.25rem 0.6rem',
+                              background: 'rgba(168, 85, 247, 0.15)',
+                              color: '#a855f7',
+                              borderRadius: '6px',
+                              fontSize: '0.78rem',
+                              fontWeight: 800,
+                              fontFamily: 'monospace',
+                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                            }}
+                          >
+                            Code: {projectCode}
+                          </span>
+                        )}
                         <h4 style={{ margin: 0, color: '#ffffff', fontSize: '1.1rem', fontWeight: 800 }}>
-                          {projName}
+                          Customer: {customerName}
                         </h4>
                       </div>
 
@@ -307,6 +318,7 @@ export const BackendProjectProgress: React.FC = () => {
                           color: 'var(--text-muted)',
                         }}
                       >
+                        <span>Location: <strong style={{ color: 'var(--accent-cyan)' }}>{location}</strong></span>
                         <span>Equipment: <strong style={{ color: '#fff' }}>{eqName}</strong> ({eqWeight} kg)</span>
                         <span>Manager: <strong style={{ color: '#fff' }}>{manager}</strong></span>
                         <span>Zero Date: <strong style={{ color: 'var(--accent-emerald)' }}>{zeroDate}</strong></span>
@@ -314,51 +326,26 @@ export const BackendProjectProgress: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedProject(proj);
-                          setIsModalOpen(true);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.55rem 0.9rem',
-                          background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.2) 0%, rgba(58, 123, 213, 0.2) 100%)',
-                          border: '1px solid rgba(0, 210, 255, 0.4)',
-                          borderRadius: '8px',
-                          color: '#ffffff',
-                          fontSize: '0.78rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          boxShadow: '0 4px 12px rgba(0, 210, 255, 0.1)',
-                        }}
-                      >
-                        <Edit size={14} color="var(--accent-cyan)" /> View / Edit Project
-                      </button>
 
-                      <div
-                        style={{
-                          padding: '0.6rem 1rem',
-                          background: 'rgba(0, 210, 255, 0.08)',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(0, 210, 255, 0.2)',
-                          textAlign: 'right',
-                        }}
-                      >
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Total Planned Hours
-                        </div>
-                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.1rem' }}>
-                          {totalHours.toLocaleString()} hrs
-                        </div>
+                    <div
+                      style={{
+                        padding: '0.6rem 1rem',
+                        background: 'rgba(0, 210, 255, 0.08)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(0, 210, 255, 0.2)',
+                        textAlign: 'right',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Total Planned Hours
+                      </div>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.1rem' }}>
+                        {totalHours.toLocaleString()} hrs
                       </div>
                     </div>
                   </div>
 
-
-                  {/* TASKS BREAKDOWN SECTION */}
+                  {/* TASKS BREAKDOWN SECTION (READ ONLY) */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {tasksList.map((taskItem, tIdx) => {
                       const tName = taskItem.task_name || taskItem.name || taskItem.task || 'Welding';
@@ -370,7 +357,7 @@ export const BackendProjectProgress: React.FC = () => {
                       const labourSupply = taskItem.labour_supply || taskItem.labourSupply || '';
                       const jobContractor = taskItem.job_contractor || taskItem.jobContractor || '';
 
-                      // Get distributions (from backend record or auto-calculated on the fly)
+                      // Get distributions
                       let distributions: ProjectTaskMonthlyDistribution[] = [];
                       if (taskItem.monthly_distributions && taskItem.monthly_distributions.length > 0) {
                         distributions = taskItem.monthly_distributions;
@@ -482,23 +469,12 @@ export const BackendProjectProgress: React.FC = () => {
             })}
           </div>
         )}
-
       </div>
 
-
-      {/* PROJECT DETAILS & EDIT MODAL */}
-      <ProjectDetailsModal
-        project={selectedProject}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onProjectUpdated={loadProjects}
-      />
     </div>
   );
 };
 
-
 function strCode(val: any): string {
   return String(val || '').toLowerCase().replace(/\s+/g, '_');
 }
-

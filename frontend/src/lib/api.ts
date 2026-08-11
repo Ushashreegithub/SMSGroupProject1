@@ -286,6 +286,10 @@ export interface ProjectTask {
 
 export interface BackendProject {
   id?: number;
+  customer_name?: string;
+  wbs_no?: string;
+  project_code?: string;
+  location?: string;
   project_name: string;
   project_number: string;
   equipment_name?: string;

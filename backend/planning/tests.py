@@ -124,3 +124,106 @@ class WeldingCalculationTestCase(TestCase):
         self.assertEqual(distributions[0].hours, 750.0)
         self.assertEqual(distributions[1].hours, 2125.0)
         self.assertEqual(distributions[2].hours, 2125.0)
+
+    def test_adjustment_logic_month_1_unutilized(self):
+        """
+        5000 hours, 3 months (Aug, Sep, Oct).
+        Month 1 actual utilization = 500 hrs (instead of 750).
+        Unutilized 250 hrs added to Sep & Oct -> 2250 hrs each.
+        """
+        result = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+            allocated_hours=5000,
+            duration_months=3,
+            start_date_str="2026-08-01",
+            adjustment_month_index=1,
+            actual_utilized_hours=500
+        )
+        self.assertEqual(result[0]['hours'], 500.0)
+        self.assertTrue(result[0]['is_adjusted'])
+        self.assertEqual(result[1]['hours'], 2250.0)
+        self.assertEqual(result[2]['hours'], 2250.0)
+        self.assertEqual(sum(r['hours'] for r in result), 5000.0)
+
+    def test_buffer_logic_month_2_extra_hours(self):
+        """
+        5000 hours, 3 months (Aug, Sep, Oct).
+        Month 2 introduces 500 extra buffer hours.
+        Sep becomes 2125 + 500 = 2625 hrs.
+        Total = 5500 hrs.
+        """
+        result = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+            allocated_hours=5000,
+            duration_months=3,
+            start_date_str="2026-08-01",
+            buffer_month_index=2,
+            buffer_hours=500
+        )
+        self.assertEqual(result[0]['hours'], 750.0)
+        self.assertEqual(result[1]['hours'], 2625.0)
+        self.assertTrue(result[1]['is_buffer_added'])
+        self.assertEqual(result[2]['hours'], 2125.0)
+        self.assertEqual(sum(r['hours'] for r in result), 5500.0)
+
+    def test_combined_adjustment_and_buffer(self):
+        """
+        5000 hours, 3 months.
+        Month 1 adjusted to 500 hrs.
+        Month 2 buffer added 500 hrs.
+        Aug = 500, Sep = 2250 + 500 = 2750, Oct = 2250.
+        Total = 5500 hrs.
+        """
+        result = ProjectPlanningEngine.calculate_welding_monthly_distribution(
+            allocated_hours=5000,
+            duration_months=3,
+            start_date_str="2026-08-01",
+            adjustment_month_index=1,
+            actual_utilized_hours=500,
+            buffer_month_index=2,
+            buffer_hours=500
+        )
+        self.assertEqual(result[0]['hours'], 500.0)
+        self.assertEqual(result[1]['hours'], 2750.0)
+        self.assertEqual(result[2]['hours'], 2250.0)
+        self.assertEqual(sum(r['hours'] for r in result), 5500.0)
+
+    def test_multi_task_project_creation(self):
+        """
+        Tests creation of a project with 5 tasks: Welding, Machining, Assembly, Plating, RR.
+        Verifies Welding uses 15% ramp-up and Machining/Assembly/Plating/RR use equal distribution.
+        """
+        payload = {
+            "customerName": "Tata Steel",
+            "wbsNo": "WBS-2026-TATA",
+            "projectCode": "PRJ-TATA-01",
+            "location": "Khordha",
+            "startDate": "2026-08-01",
+            "endDate": "2026-11-01",
+            "projectManager": "Ramesh Kumar",
+            "tasks": [
+                {"task_name": "Welding", "allocated_hours": 3000, "duration_months": 3},
+                {"task_name": "Machining", "allocated_hours": 1500, "duration_months": 3},
+                {"task_name": "Assembly", "allocated_hours": 1200, "duration_months": 3},
+                {"task_name": "Plating", "allocated_hours": 900, "duration_months": 3},
+                {"task_name": "RR", "allocated_hours": 600, "duration_months": 3},
+            ]
+        }
+        response = self.client.post('/api/v1/projects/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        project = Project.objects.get(wbs_no="WBS-2026-TATA")
+        self.assertEqual(project.tasks.count(), 5)
+
+        # Welding: 15% in M1 = 450, M2 & M3 = 1275 each
+        weld_task = project.tasks.get(task_name="Welding")
+        w_dists = list(weld_task.monthly_distributions.all())
+        self.assertEqual(w_dists[0].hours, 450.0)
+        self.assertEqual(w_dists[1].hours, 1275.0)
+
+        # Machining: Equal split 1500 / 3 = 500 each month
+        mach_task = project.tasks.get(task_name="Machining")
+        m_dists = list(mach_task.monthly_distributions.all())
+        self.assertEqual(m_dists[0].hours, 500.0)
+        self.assertEqual(m_dists[1].hours, 500.0)
+        self.assertEqual(m_dists[2].hours, 500.0)
+
+
