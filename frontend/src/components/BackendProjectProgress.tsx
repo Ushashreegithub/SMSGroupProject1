@@ -397,21 +397,6 @@ export const BackendProjectProgress: React.FC = () => {
                                   Location: {location}
                                 </span>
                               )}
-                              {smi && (
-                                <span style={{ padding: '0.15rem 0.5rem', background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                                  SMI: {smi}
-                                </span>
-                              )}
-                              {labourSupply && (
-                                <span style={{ padding: '0.15rem 0.5rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                                  Labour: {labourSupply}
-                                </span>
-                              )}
-                              {jobContractor && (
-                                <span style={{ padding: '0.15rem 0.5rem', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                                  Contractor: {jobContractor}
-                                </span>
-                              )}
                             </div>
 
                             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
