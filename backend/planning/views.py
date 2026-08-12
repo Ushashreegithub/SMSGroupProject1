@@ -356,22 +356,109 @@ class BenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
 def login_api(request):
     username = request.data.get("username")
     password = request.data.get("password")
+    login_role = request.data.get("role", "user")
+
+    # --------------------------------------------------
+    # Validate required fields
+    # --------------------------------------------------
 
     if not username or not password:
         return Response(
-            {"error": "Username and password are required"},
+            {
+                "success": False,
+                "error": "Username and password are required"
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    user = authenticate(username=username, password=password)
+    # --------------------------------------------------
+    # Validate role
+    # --------------------------------------------------
+
+    allowed_roles = ["administrator", "user"]
+
+    if login_role not in allowed_roles:
+        return Response(
+            {
+                "success": False,
+                "error": "Invalid login role"
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # --------------------------------------------------
+    # Authenticate username and password
+    # --------------------------------------------------
+
+    user = authenticate(
+        username=username,
+        password=password
+    )
 
     if user is None:
         return Response(
-            {"error": "Invalid username or password"},
+            {
+                "success": False,
+                "error": "Invalid username or password"
+            },
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
+    # --------------------------------------------------
+    # Determine actual backend role
+    # --------------------------------------------------
+
+    is_administrator = (
+        user.is_staff or user.is_superuser
+    )
+
+    actual_role = (
+        "administrator"
+        if is_administrator
+        else "user"
+    )
+
+    # --------------------------------------------------
+    # Validate selected role against actual user role
+    # --------------------------------------------------
+
+    if login_role == "administrator" and not is_administrator:
+        return Response(
+            {
+                "success": False,
+                "error": "This account does not have administrator access."
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if login_role == "user" and is_administrator:
+        return Response(
+            {
+                "success": False,
+                "error": "Administrator accounts must use Administrator login."
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # --------------------------------------------------
+    # Generate JWT tokens
+    # --------------------------------------------------
+
     refresh = RefreshToken.for_user(user)
+
+    # Store role inside JWT token
+    refresh["role"] = actual_role
+    refresh.access_token["role"] = actual_role
+
+    # --------------------------------------------------
+    # Return response
+    # --------------------------------------------------
+
+    # Determine application role
+    if user.is_superuser or user.is_staff:
+        role = "administrator"
+    else:
+        role = "user"
 
     return Response({
         "success": True,
@@ -380,9 +467,12 @@ def login_api(request):
         "user": {
             "username": user.username,
             "email": user.email,
+            "role": role,
             "is_superuser": user.is_superuser,
+            "is_staff": user.is_staff,
         }
     })
+        
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
