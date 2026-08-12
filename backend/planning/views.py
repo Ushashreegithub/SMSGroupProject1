@@ -356,7 +356,7 @@ class BenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
 def login_api(request):
     username = request.data.get("username")
     password = request.data.get("password")
-    login_role = request.data.get("role", "user")
+    login_role = request.data.get("role") or request.data.get("login_type") or "user"
 
     # --------------------------------------------------
     # Validate required fields

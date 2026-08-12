@@ -12,7 +12,7 @@ import {
   LogOut,
   FileBarChart2,
   FolderKanban,
-  UserCheck
+  Eye
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,18 +28,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   onLogout 
 }) => {
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'upload', label: 'Upload Planning', icon: UploadCloud },
-    { id: 'capacity-planning', label: 'Capacity Planning', icon: Calculator },
-    { id: "project-planning", label: "Project Planning", icon: FolderKanban },
-    { id: "summary", label: "Summary", icon: FileBarChart2 },
-    { id: 'history', label: 'Version History', icon: History },
-    { id: 'benchmarks', label: 'Benchmarks', icon: BarChart3 },
+  const isAdmin = Boolean(currentUser?.role === 'administrator' || currentUser?.is_superuser || currentUser?.is_staff);
+
+  const allMenuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+    { id: 'upload', label: 'Upload Planning', icon: UploadCloud, adminOnly: true },
+    { id: 'capacity-planning', label: 'Capacity Planning', icon: Calculator, adminOnly: true },
+    { id: 'project-planning', label: 'Project Planning', icon: FolderKanban, adminOnly: true },
+    { id: 'summary', label: 'Summary', icon: FileBarChart2, adminOnly: false },
+    { id: 'history', label: 'Version History', icon: History, adminOnly: false },
+    { id: 'benchmarks', label: 'Benchmarks', icon: BarChart3, adminOnly: false },
   ];
 
+  const menuItems = allMenuItems.filter(item => !item.adminOnly || isAdmin);
+
   const getInitials = (name?: string) => {
-    if (!name) return 'JS';
+    if (!name) return 'US';
     const parts = name.split(' ');
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return name.substring(0, 2).toUpperCase();
@@ -53,13 +57,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <h1 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginTop: '0.2rem' }}>
             Capacity Planning
           </h1>
-          <span style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)' }}>ENTERPRISE PLANT</span>
+          <span style={{ fontSize: '0.65rem', color: isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontWeight: 700 }}>
+            {isAdmin ? 'ENTERPRISE PLANT (ADMIN)' : 'VIEW ONLY PORTAL'}
+          </span>
         </div>
       </div>
 
       <div className="nav-menu">
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.1em', paddingLeft: '0.75rem', marginBottom: '0.5rem', fontWeight: 600 }}>
-          CORE OPERATIONS
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.1em', paddingLeft: '0.75rem', marginBottom: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>CORE OPERATIONS</span>
+          {!isAdmin && (
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent-amber)', background: 'rgba(255,171,0,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+              VIEW ONLY
+            </span>
+          )}
         </div>
 
         {menuItems.map((item) => {
@@ -82,20 +93,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-footer">
         {currentUser && (
           <div className="user-profile-badge">
-            <div className="avatar-circle">
-              {getInitials(currentUser.name)}
+            <div className="avatar-circle" style={{ background: isAdmin ? 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))' : 'linear-gradient(135deg, #475569, #334155)' }}>
+              {getInitials(currentUser.name || currentUser.username)}
             </div>
             <div className="user-info">
-              <span className="user-name">{currentUser.name}</span>
-              <span className="user-role">{currentUser.role}</span>
+              <span className="user-name">{currentUser.name || currentUser.username}</span>
+              <span className="user-role" style={{ color: isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {!isAdmin && <Eye size={12} />}
+                {isAdmin ? 'Administrator' : 'User (View Only)'}
+              </span>
             </div>
           </div>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-            <ShieldCheck size={15} color="var(--accent-emerald)" />
-            <span>Enterprise API Sync</span>
+            <ShieldCheck size={15} color={isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)'} />
+            <span>{isAdmin ? 'Admin Auth Granted' : 'Read-Only Permission'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
             <Cpu size={15} color="var(--accent-cyan)" />
