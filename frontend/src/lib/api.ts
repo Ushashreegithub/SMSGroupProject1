@@ -43,10 +43,12 @@ export interface BenchmarkItem {
 }
 
 export interface AuthUser {
-  name: string;
-  role: string;
+  username: string;
+  name?: string;
   email: string;
-  token?: string;
+  role: 'administrator' | 'user';
+  is_superuser: boolean;
+  is_staff: boolean;
 }
 
 export interface AuthResponse {
@@ -59,14 +61,17 @@ export function getApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  return '/api/v1';
+
+  return 'http://127.0.0.1:8000/api/v1';
 }
 
 export function getChartUrl(url: string | undefined): string {
   if (!url) return '';
+
   if (url.startsWith('http://localhost:8000')) {
     return url.replace('http://localhost:8000', '');
   }
+
   return url;
 }
 
@@ -125,63 +130,62 @@ export async function uploadPlanningSpreadsheet(file: File): Promise<PlanningVer
 
 export async function loginUser(
   username: string,
-  password: string
-): Promise<{
-  user: AuthUser;
-  access: string;
-  refresh: string;
-}> {
-
+  password: string,
+  loginType: 'administrator' | 'user'
+): Promise<AuthResponse> {
   const apiBase = getApiBaseUrl();
 
+  const res = await fetch(`${apiBase}/auth/login/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username: username.trim(),
+      password,
+      login_type: loginType,
+    }),
+  });
+
+  let data: any;
+
   try {
-    const res = await fetch(`${apiBase}/auth/login/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username,
-        password,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Invalid credentials");
-    }
-
-    return {
-      user: data.user,
-      access: data.access,
-      refresh: data.refresh,
-    };
-
-  } catch (err: any) {
-
-    // Offline fallback
-    const cleanUsername = username.trim().toLowerCase();
-    const cleanPassword = password.trim();
-
-    if (
-      cleanUsername === "admin" &&
-      cleanPassword === "smsgroup2026"
-    ) {
-      return {
-        user: {
-          name: "Plant Administrator",
-          role: "Plant Administrator",
-          email: "admin@sms-group.com",
-        },
-        access: "offline_access_token",
-        refresh: "offline_refresh_token",
-      };
-    }
-
-    throw err;
+    data = await res.json();
+  } catch {
+    throw new Error(
+      'Backend returned an invalid response. Please make sure Django is running.'
+    );
   }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'Invalid username or password');
+  }
+
+  if (!data.access || !data.refresh || !data.user) {
+    throw new Error('Invalid login response from backend');
+  }
+
+  const backendUser = data.user;
+
+  const role: 'administrator' | 'user' =
+    backendUser.role ||
+    (backendUser.is_superuser ? 'administrator' : 'user');
+
+  return {
+    user: {
+      username: backendUser.username,
+      name: backendUser.name || backendUser.username,
+      email: backendUser.email || '',
+      role,
+      is_superuser: Boolean(backendUser.is_superuser),
+      is_staff: Boolean(backendUser.is_staff),
+    },
+    access: data.access,
+    refresh: data.refresh,
+  };
 }
+
+
 export interface CalculatedTaskItem {
   id: string;
   name: string;
