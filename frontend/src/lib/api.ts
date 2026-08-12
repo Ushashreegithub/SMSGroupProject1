@@ -143,6 +143,7 @@ export async function loginUser(
     body: JSON.stringify({
       username: username.trim(),
       password,
+      role: loginType,
       login_type: loginType,
     }),
   });

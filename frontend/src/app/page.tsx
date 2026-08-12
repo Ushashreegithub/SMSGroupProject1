@@ -116,6 +116,17 @@ export default function Home() {
   }
 }, []);
 
+  const isAdmin = Boolean(currentUser?.role === 'administrator' || currentUser?.is_superuser || currentUser?.is_staff);
+
+  // Access control guard: regular users cannot access capacity-planning, project-planning, or upload
+  useEffect(() => {
+    if (isAuthenticated && !isAdmin) {
+      if (['capacity-planning', 'project-planning', 'upload'].includes(currentView)) {
+        setCurrentView('dashboard');
+      }
+    }
+  }, [isAuthenticated, isAdmin, currentView]);
+
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -235,10 +246,25 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div className="status-indicator">
               <div className="dot-online" />
               <span>{apiConnected ? 'System Operational' : 'Offline Mode'}</span>
+            </div>
+
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              background: isAdmin ? 'rgba(0, 210, 255, 0.12)' : 'rgba(0, 230, 118, 0.12)',
+              color: isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)',
+              border: `1px solid ${isAdmin ? 'rgba(0, 210, 255, 0.3)' : 'rgba(0, 230, 118, 0.3)'}`
+            }}>
+              <span>{isAdmin ? '🛡️ Administrator' : '👁️ User (View Only)'}</span>
             </div>
 
             <button 
