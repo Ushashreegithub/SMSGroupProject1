@@ -577,6 +577,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
             buf_m = t_data.get('buffer_month_index') or t_data.get('bufferMonthIndex')
             buf_h = float(t_data.get('buffer_hours') or t_data.get('bufferHours') or 0.0)
 
+            t_loc = t_data.get('location', '')
+            if str(t_name).strip().lower() != 'welding':
+                t_loc = 'Khordha'
+            elif not t_loc:
+                t_loc = 'Khordha'
+
             task_obj = ProjectTask.objects.create(
                 project=project,
                 task_name=t_name,
@@ -584,7 +590,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 allocated_hours=t_hours,
                 duration_months=t_duration,
                 start_date=t_start if isinstance(t_start, str) else (t_start.strftime("%Y-%m-%d") if t_start else None),
-                location=t_data.get('location', ''),
+                location=t_loc,
                 smi=t_data.get('smi', ''),
                 labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
                 job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
@@ -696,6 +702,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 buf_m = t_data.get('buffer_month_index') or t_data.get('bufferMonthIndex')
                 buf_h = float(t_data.get('buffer_hours') or t_data.get('bufferHours') or 0.0)
 
+                t_loc = t_data.get('location', '')
+                if str(t_name).strip().lower() != 'welding':
+                    t_loc = 'Khordha'
+                elif not t_loc:
+                    t_loc = 'Khordha'
+
                 task_obj = ProjectTask.objects.create(
                     project=instance,
                     task_name=t_name,
@@ -703,7 +715,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     allocated_hours=t_hours,
                     duration_months=t_duration,
                     start_date=t_start if isinstance(t_start, str) else (t_start.strftime("%Y-%m-%d") if t_start else None),
-                    location=t_data.get('location', ''),
+                    location=t_loc,
                     smi=t_data.get('smi', ''),
                     labour_supply=t_data.get('labour_supply', t_data.get('labourSupply', '')),
                     job_contractor=t_data.get('job_contractor', t_data.get('jobContractor', '')),
