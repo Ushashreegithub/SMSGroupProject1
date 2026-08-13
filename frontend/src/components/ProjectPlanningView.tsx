@@ -21,6 +21,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { ProjectDetailsModal } from './ProjectDetailsModal';
+import { getApiBaseUrl } from '../lib/api';
 
 
 interface Project {
@@ -287,7 +288,8 @@ export const ProjectPlanningView: React.FC<ProjectPlanningViewProps> = ({
 
     // Also persist to Django REST API backend for engine monthly calculations
     try {
-      fetch('/api/v1/projects/', {
+      const apiBase = getApiBaseUrl();
+      fetch(`${apiBase}/projects/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProject),
