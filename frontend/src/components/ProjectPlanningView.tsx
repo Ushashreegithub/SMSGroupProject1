@@ -24,6 +24,7 @@ import { ProjectDetailsModal } from './ProjectDetailsModal';
 
 interface Project {
   id: string;
+  serialNo: number;
   projectName: string;
   projectNumber: string;
   equipmentName: string;
@@ -236,25 +237,53 @@ export const ProjectPlanningView: React.FC<
    */
 
   const loadProjects = () => {
-    try {
-      const saved = localStorage.getItem(
-        'sms_project_planning'
+  try {
+    const saved = localStorage.getItem('sms_project_planning');
+
+    if (saved) {
+      const parsedProjects = JSON.parse(saved);
+
+      // Add serial numbers to old projects that don't have one
+      const projectsWithSerialNo = parsedProjects.map(
+        (project: any, index: number) => ({
+          ...project,
+          serialNo:
+            typeof project.serialNo === 'number'
+              ? project.serialNo
+              : index + 1,
+        })
       );
 
-      if (saved) {
-        setProjects(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error(
-        'Failed to load saved projects',
-        e
+      setProjects(projectsWithSerialNo);
+
+      // Save migrated projects back to localStorage
+      localStorage.setItem(
+        'sms_project_planning',
+        JSON.stringify(projectsWithSerialNo)
       );
     }
-  };
+  } catch (e) {
+    console.error('Failed to load saved projects', e);
+  }
+};
 
   useEffect(() => {
     loadProjects();
   }, []);
+
+  /*
+   * ============================================================
+   * PROJECT SERIALIZATION
+   * ============================================================
+   * The next project always receives the next available serial
+   * number: 1, 2, 3, 4, ...
+   */
+  const nextSerialNo =
+    projects.reduce(
+      (max, project: any) =>
+        Math.max(max, Number(project.serialNo) || 0),
+      0
+    ) + 1;
 
   /*
    * ============================================================
@@ -734,6 +763,7 @@ export const ProjectPlanningView: React.FC<
 
     const newProject: any = {
       id: `project_${Date.now()}`,
+      serialNo: nextSerialNo,
 
       customerName: cName,
       customer_name: cName,
@@ -3474,6 +3504,10 @@ export const ProjectPlanningView: React.FC<
                 }}
               >
                 <th style={tableHeaderStyle}>
+                  S.No.
+                </th>
+
+                <th style={tableHeaderStyle}>
                   Customer Name
                 </th>
 
@@ -3562,6 +3596,19 @@ export const ProjectPlanningView: React.FC<
                           '1px solid rgba(255,255,255,0.05)',
                       }}
                     >
+                      {/* SERIAL NUMBER */}
+
+                      <td
+                        style={{
+                          ...tableCellStyle,
+                          color: 'var(--accent-cyan)',
+                          fontWeight: 800,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {Number(project.serialNo) || 0}
+                      </td>
+
                       {/* CUSTOMER NAME */}
 
                       <td
