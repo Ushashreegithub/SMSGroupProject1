@@ -64,6 +64,41 @@ interface ValidationErrors {
   taskAllocatedHours: Record<number, string>;
 }
 
+// Display dates in DD-MM-YYYY format while keeping the stored/API value as YYYY-MM-DD.
+function formatDisplayDate(dateValue?: string): string {
+  if (!dateValue) return '—';
+
+  const match = String(dateValue).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}-${month}-${year}`;
+  }
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+// Open the native calendar when the user clicks anywhere inside a date input.
+// The browser keeps the actual value in YYYY-MM-DD; this only controls the picker UI.
+function openDatePicker(event: React.MouseEvent<HTMLInputElement>) {
+  const input = event.currentTarget as HTMLInputElement & {
+    showPicker?: () => void;
+  };
+
+  if (typeof input.showPicker === 'function') {
+    try {
+      input.showPicker();
+    } catch {
+      // Let the browser's normal date-input behavior handle unsupported cases.
+    }
+  }
+}
+
 function getProjectMonthSteps(startDateStr: string, endDateStr: string) {
   const start = startDateStr
     ? new Date(startDateStr)
@@ -1374,6 +1409,7 @@ export const ProjectPlanningView: React.FC<
                   ref={startDateRef}
                   type="date"
                   name="startDate"
+                  onClick={openDatePicker}
                   value={
                     formData.startDate
                   }
@@ -1405,6 +1441,7 @@ export const ProjectPlanningView: React.FC<
                   ref={endDateRef}
                   type="date"
                   name="endDate"
+                  onClick={openDatePicker}
                   value={
                     formData.endDate
                   }
@@ -3753,8 +3790,7 @@ export const ProjectPlanningView: React.FC<
                             Zero:{' '}
                           </span>
 
-                          {project.startDate ||
-                            '—'}
+                          {formatDisplayDate(project.startDate)}
                         </div>
 
                         <div>
@@ -3769,8 +3805,7 @@ export const ProjectPlanningView: React.FC<
                             CDD:{' '}
                           </span>
 
-                          {project.endDate ||
-                            '—'}
+                          {formatDisplayDate(project.endDate)}
                         </div>
                       </td>
 
