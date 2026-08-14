@@ -1,16 +1,100 @@
-import React from "react";
-import { Gauge, FolderKanban, Sparkles, Layers } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Gauge, FolderKanban, Sparkles } from "lucide-react";
 import { MonthlyTaskBreakdown } from "./MonthlyTaskBreakdown";
 import { BackendProjectProgress } from "./BackendProjectProgress";
-import { ManualCalculationResponse } from "../lib/api";
+import {
+  ManualCalculationResponse,
+  fetchManualConfig,
+  calculateManualPlanning,
+} from "../lib/api";
 
 interface SummaryViewProps {
   calculationResult: ManualCalculationResponse | null;
+  onCalculationResultLoaded?: (
+    result: ManualCalculationResponse | null
+  ) => void;
 }
 
 export const SummaryView: React.FC<SummaryViewProps> = ({
   calculationResult,
+  onCalculationResultLoaded,
 }) => {
+  const [displayCalculationResult, setDisplayCalculationResult] =
+    useState<ManualCalculationResponse | null>(calculationResult);
+
+  const [loadingCapacity, setLoadingCapacity] = useState<boolean>(false);
+
+  useEffect(() => {
+    setDisplayCalculationResult(calculationResult);
+  }, [calculationResult]);
+
+  /*
+   * IMPORTANT:
+   * Normal users cannot open Capacity Planning.
+   *
+   * Therefore, when Summary opens and calculationResult is empty,
+   * we load the saved Capacity Planning configuration from backend
+   * and calculate the result automatically.
+   */
+  useEffect(() => {
+    const loadSavedCapacityPlanning = async () => {
+      // If the result is already available, don't calculate again.
+      if (calculationResult) {
+        return;
+      }
+
+      try {
+        setLoadingCapacity(true);
+
+        const savedConfig = await fetchManualConfig();
+
+        if (
+          !savedConfig ||
+          !savedConfig.tasks ||
+          savedConfig.tasks.length === 0
+        ) {
+          setDisplayCalculationResult(null);
+          return;
+        }
+
+        const result = await calculateManualPlanning(
+          savedConfig.tasks.reduce(
+            (total: number, task: any) =>
+              total + Number(task.hours || task.allocated_hours || 0),
+            0
+          ),
+          Number(savedConfig.year || 2026),
+          savedConfig.tasks.map((task: any) => ({
+            id: String(task.id),
+            name: task.name || task.task_name || "Task",
+            category: task.category || task.task_name || "General",
+            hours: Number(
+              task.hours || task.allocated_hours || 0
+            ),
+          }))
+        );
+
+        if (result) {
+          setDisplayCalculationResult(result);
+
+          if (onCalculationResultLoaded) {
+            onCalculationResultLoaded(result);
+          }
+        }
+      } catch (error) {
+        console.warn(
+          "Unable to load saved capacity planning data:",
+          error
+        );
+        setDisplayCalculationResult(null);
+      } finally {
+        setLoadingCapacity(false);
+      }
+    };
+
+    loadSavedCapacityPlanning();
+  }, [calculationResult, onCalculationResultLoaded]);
+
   return (
     <div
       style={{
@@ -19,15 +103,25 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         gap: "2rem",
       }}
     >
-      {/* SECTION 1: CAPACITY PLANNING SUMMARY (TABLE 3) */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {/* ============================================================
+          SECTION 1: CAPACITY PLANNING SUMMARY
+          ============================================================ */}
+      <section
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+        }}
+      >
+        {/* SECTION HEADER */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
             padding: "0.75rem 1.25rem",
-            background: "linear-gradient(90deg, rgba(0, 210, 255, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(0, 210, 255, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
             borderLeft: "4px solid var(--accent-cyan)",
             borderRadius: "8px",
             borderTop: "1px solid rgba(0, 210, 255, 0.2)",
@@ -49,7 +143,13 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           </div>
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
               <span
                 style={{
                   fontSize: "0.65rem",
@@ -64,21 +164,72 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               >
                 Part I
               </span>
-              <h2 style={{ margin: 0, color: "#ffffff", fontSize: "1.1rem", fontWeight: 800 }}>
+
+              <h2
+                style={{
+                  margin: 0,
+                  color: "#ffffff",
+                  fontSize: "1.1rem",
+                  fontWeight: 800,
+                }}
+              >
                 Capacity Planning Summary
               </h2>
             </div>
-            <p style={{ margin: "0.15rem 0 0 0", color: "var(--text-muted)", fontSize: "0.78rem" }}>
-              Plant-wide Annual Available Capacity & Monthly Department Task Hours Breakdown (Table 3)
+
+            <p
+              style={{
+                margin: "0.15rem 0 0 0",
+                color: "var(--text-muted)",
+                fontSize: "0.78rem",
+              }}
+            >
+              Plant-wide Annual Available Capacity & Monthly Department Task
+              Hours Breakdown (Table 3)
             </p>
           </div>
         </div>
 
-        {/* TABLE 3: Calculated Monthly Task Hours Breakdown */}
-        <MonthlyTaskBreakdown calculationResult={calculationResult} />
+        {/* ============================================================
+            CAPACITY PLANNING TABLE
+            ============================================================ */}
+
+        {loadingCapacity ? (
+          <div
+            style={{
+              padding: "2rem",
+              background: "#101827",
+              border: "1px solid rgba(0, 210, 255, 0.2)",
+              borderRadius: "12px",
+              textAlign: "center",
+              color: "var(--text-muted)",
+            }}
+          >
+            Loading capacity planning data...
+          </div>
+        ) : displayCalculationResult ? (
+          <MonthlyTaskBreakdown
+            calculationResult={displayCalculationResult}
+          />
+        ) : (
+          <div
+            style={{
+              padding: "2rem",
+              background: "#101827",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: "12px",
+              textAlign: "center",
+              color: "var(--text-muted)",
+            }}
+          >
+            No capacity planning data is available yet.
+          </div>
+        )}
       </section>
 
-      {/* DISTINCT VISUAL PARTITION DIVIDER */}
+      {/* ============================================================
+          DISTINCT VISUAL PARTITION DIVIDER
+          ============================================================ */}
       <div
         style={{
           position: "relative",
@@ -93,9 +244,11 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             position: "absolute",
             width: "100%",
             height: "1px",
-            background: "linear-gradient(90deg, transparent 0%, rgba(0, 210, 255, 0.4) 50%, transparent 100%)",
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(0, 210, 255, 0.4) 50%, transparent 100%)",
           }}
         />
+
         <div
           style={{
             position: "relative",
@@ -115,20 +268,32 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           }}
         >
           <Sparkles size={12} color="var(--accent-cyan)" />
+
           Distinct Summary View Partition
+
           <Sparkles size={12} color="var(--accent-cyan)" />
         </div>
       </div>
 
-      {/* SECTION 2: INDIVIDUAL PROJECT PLANNING PROGRESS */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {/* ============================================================
+          SECTION 2: PROJECT PLANNING
+          ============================================================ */}
+      <section
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+        }}
+      >
+        {/* SECTION HEADER */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: "0.75rem",
             padding: "0.75rem 1.25rem",
-            background: "linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
             borderLeft: "4px solid var(--accent-emerald)",
             borderRadius: "8px",
             borderTop: "1px solid rgba(16, 185, 129, 0.2)",
@@ -146,11 +311,20 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               justifyContent: "center",
             }}
           >
-            <FolderKanban size={20} color="var(--accent-emerald)" />
+            <FolderKanban
+              size={20}
+              color="var(--accent-emerald)"
+            />
           </div>
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
               <span
                 style={{
                   fontSize: "0.65rem",
@@ -165,17 +339,33 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               >
                 Part II
               </span>
-              <h2 style={{ margin: 0, color: "#ffffff", fontSize: "1.1rem", fontWeight: 800 }}>
+
+              <h2
+                style={{
+                  margin: 0,
+                  color: "#ffffff",
+                  fontSize: "1.1rem",
+                  fontWeight: 800,
+                }}
+              >
                 Project Planning & Task Breakdown Display
               </h2>
             </div>
-            <p style={{ margin: "0.15rem 0 0 0", color: "var(--text-muted)", fontSize: "0.78rem" }}>
-              Detailed Record of Projects Created in Project Planning with Calculated Task Distribution (e.g. Welding 15% Month 1 Ramp-up)
+
+            <p
+              style={{
+                margin: "0.15rem 0 0 0",
+                color: "var(--text-muted)",
+                fontSize: "0.78rem",
+              }}
+            >
+              Detailed Record of Projects Created in Project Planning with
+              Calculated Task Distribution (e.g. Welding 15% Month 1 Ramp-up)
             </p>
           </div>
         </div>
 
-        {/* BACKEND PROJECT PLANNING & ENGINE PROGRESS DISPLAY */}
+        {/* PROJECT PLANNING DATA */}
         <BackendProjectProgress />
       </section>
     </div>
