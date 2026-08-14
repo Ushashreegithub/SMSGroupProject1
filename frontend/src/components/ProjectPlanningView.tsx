@@ -279,13 +279,12 @@ export const ProjectPlanningView: React.FC<
       const parsedProjects = JSON.parse(saved);
 
       // Add serial numbers to old projects that don't have one
+      // Normalize serial numbers so saved projects always start at 1
+      // and remain continuous, even if older data contains gaps.
       const projectsWithSerialNo = parsedProjects.map(
         (project: any, index: number) => ({
           ...project,
-          serialNo:
-            typeof project.serialNo === 'number'
-              ? project.serialNo
-              : index + 1,
+          serialNo: index + 1,
         })
       );
 
@@ -305,6 +304,72 @@ export const ProjectPlanningView: React.FC<
   useEffect(() => {
     loadProjects();
   }, []);
+
+  /*
+   * ============================================================
+   * DELETE PROJECT
+   * ============================================================
+   * Removes the project from the local project list immediately
+   * and also attempts to remove it from the Django backend.
+   */
+  const handleDeleteProject = async (project: any) => {
+    const projectName =
+      project.customer_name ||
+      project.customerName ||
+      project.project_name ||
+      project.projectName ||
+      'this project';
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${projectName}?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    // Remove the selected project first.
+    const remainingProjects = projects.filter(
+      (item: any) => String(item.id) !== String(project.id)
+    );
+
+    // Re-number the remaining projects so the serial numbers are always
+    // continuous: 1, 2, 3, 4, ... with no gaps after a deletion.
+    const updatedProjects = remainingProjects.map(
+      (item: any, index: number) => ({
+        ...item,
+        serialNo: index + 1,
+      })
+    );
+
+    setProjects(updatedProjects);
+
+    localStorage.setItem(
+      'sms_project_planning',
+      JSON.stringify(updatedProjects)
+    );
+
+    // Best-effort backend deletion. The local project list is
+    // updated even if the backend is unavailable.
+    try {
+      const response = await fetch(
+        `/api/v1/projects/${encodeURIComponent(String(project.id))}/`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(
+          'Backend project deletion was not completed:',
+          response.status
+        );
+      }
+    } catch (error) {
+      console.warn(
+        'Backend project deletion unavailable; local project was deleted:',
+        error
+      );
+    }
+  };
 
   /*
    * ============================================================
@@ -3871,50 +3936,86 @@ export const ProjectPlanningView: React.FC<
                           tableCellStyle
                         }
                       >
-                        <button
-                          onClick={() => {
-                            setSelectedProject(
-                              project
-                            );
-
-                            setIsModalOpen(
-                              true
-                            );
-                          }}
+                        <div
                           style={{
-                            display:
-                              'inline-flex',
-                            alignItems:
-                              'center',
-                            gap: '0.3rem',
-                            padding:
-                              '0.35rem 0.65rem',
-                            background:
-                              'rgba(0, 210, 255, 0.12)',
-                            border:
-                              '1px solid rgba(0, 210, 255, 0.3)',
-                            borderRadius:
-                              '6px',
-                            color:
-                              'var(--accent-cyan)',
-                            fontWeight:
-                              700,
-                            fontSize:
-                              '0.72rem',
-                            cursor:
-                              'pointer',
-                            whiteSpace:
-                              'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            flexWrap: 'wrap',
                           }}
                         >
-                          <Edit
-                            size={
-                              13
-                            }
-                          />
-                          View /
-                          Edit
-                        </button>
+                          <button
+                            onClick={() => {
+                              setSelectedProject(
+                                project
+                              );
+
+                              setIsModalOpen(
+                                true
+                              );
+                            }}
+                            style={{
+                              display:
+                                'inline-flex',
+                              alignItems:
+                                'center',
+                              gap: '0.3rem',
+                              padding:
+                                '0.35rem 0.65rem',
+                              background:
+                                'rgba(0, 210, 255, 0.12)',
+                              border:
+                                '1px solid rgba(0, 210, 255, 0.3)',
+                              borderRadius:
+                                '6px',
+                              color:
+                                'var(--accent-cyan)',
+                              fontWeight:
+                                700,
+                              fontSize:
+                                '0.72rem',
+                              cursor:
+                                'pointer',
+                              whiteSpace:
+                                'nowrap',
+                            }}
+                          >
+                            <Edit
+                              size={
+                                13
+                              }
+                            />
+                            View /
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project);
+                            }}
+                            title="Delete project"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.55rem',
+                              background: 'rgba(239, 68, 68, 0.10)',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              borderRadius: '6px',
+                              color: '#f87171',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <Trash2 size={13} />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
