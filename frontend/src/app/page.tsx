@@ -294,9 +294,11 @@ export default function Home() {
         )}
 
         {currentView === "summary" && (
-          <SummaryView calculationResult={manualCalculationResult} />
-        )}
-
+  <SummaryView
+    calculationResult={manualCalculationResult}
+    onCalculationResultLoaded={setManualCalculationResult}
+  />
+)}
         {currentView === 'history' && (
           <HistoryView versions={versions} onSelectVersion={handleSelectVersion} />
         )}
