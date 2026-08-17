@@ -194,17 +194,16 @@ def run_graph_automation(file_path=None, data_dict=None):
         return False
 
 
-def sync_graph_automation_charts(request=None, force=True):
+def sync_graph_automation_charts(request=None, force=False):
     workspace_root = Path(settings.BASE_DIR).parent
     graph_out = workspace_root / "Graph_Automation" / "output"
-    graph_outs = workspace_root / "Graph_Automation" / "outputs"
-    
-    scb_dashboard_png = graph_out / "scb_dashboard.png"
-    if force or not scb_dashboard_png.exists():
-        run_graph_automation()
-
     media_charts = Path(settings.MEDIA_ROOT) / "charts"
     media_charts.mkdir(parents=True, exist_ok=True)
+
+    welding_png = media_charts / "welding_dashboard.png"
+    scb_dashboard_png = graph_out / "scb_dashboard.png"
+    if force or not scb_dashboard_png.exists() or not welding_png.exists():
+        run_graph_automation()
 
     frontend_public_charts = workspace_root / "frontend" / "public" / "media" / "charts"
     if frontend_public_charts.parent.parent.exists():
@@ -394,9 +393,12 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
                 "loadHours": live_data.get(col, [0.0] * 12)
             }
 
+        chart_urls = sync_graph_automation_charts(request=request)
+
         serializer = self.get_serializer(latest_ver)
         data = serializer.data
         data["departments"] = live_depts
+        data["chart_urls"] = chart_urls
         data["file_name"] = "Live System Inputs & Project DB"
         return Response(data)
 
