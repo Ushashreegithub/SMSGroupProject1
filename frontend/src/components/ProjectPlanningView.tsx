@@ -232,6 +232,85 @@ export const ProjectPlanningView: React.FC<
   const taskAllocatedHoursRefs =
     useRef<Record<number, HTMLInputElement | null>>({});
 
+  const openDatePicker = (e: React.MouseEvent<HTMLInputElement>) => {
+    try {
+      if ('showPicker' in HTMLInputElement.prototype) {
+        (e.currentTarget as any).showPicker();
+      }
+    } catch (err) {
+      // Fallback for browsers that don't support showPicker()
+    }
+  };
+
+  const formatDisplayDate = (dateStr?: string) => {
+    if (!dateStr) return '—';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const handleDeleteProject = async (project: any) => {
+    const projectName =
+      project.customer_name ||
+      project.customerName ||
+      project.project_name ||
+      project.projectName ||
+      'this project';
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${projectName}?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    const remainingProjects = projects.filter(
+      (item: any) => String(item.id) !== String(project.id)
+    );
+
+    const updatedProjects = remainingProjects.map(
+      (item: any, index: number) => ({
+        ...item,
+        serialNo: index + 1,
+      })
+    );
+
+    setProjects(updatedProjects);
+
+    localStorage.setItem(
+      'sms_project_planning',
+      JSON.stringify(updatedProjects)
+    );
+
+    try {
+      const response = await fetch(
+        `${getApiBaseUrl()}/projects/${encodeURIComponent(String(project.id))}/`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(
+          'Backend project deletion was not completed:',
+          response.status
+        );
+      }
+    } catch (error) {
+      console.warn(
+        'Backend project deletion unavailable; local project was deleted:',
+        error
+      );
+    }
+  };
+
   /*
    * ============================================================
    * LOAD PROJECTS
@@ -1417,6 +1496,7 @@ export const ProjectPlanningView: React.FC<
                   ref={startDateRef}
                   type="date"
                   name="startDate"
+                  onClick={openDatePicker}
                   value={
                     formData.startDate
                   }
@@ -1448,6 +1528,7 @@ export const ProjectPlanningView: React.FC<
                   ref={endDateRef}
                   type="date"
                   name="endDate"
+                  onClick={openDatePicker}
                   value={
                     formData.endDate
                   }
@@ -3315,8 +3396,7 @@ export const ProjectPlanningView: React.FC<
                             Zero:{' '}
                           </span>
 
-                          {project.startDate ||
-                            '—'}
+                          {formatDisplayDate(project.startDate)}
                         </div>
 
                         <div>
@@ -3331,8 +3411,7 @@ export const ProjectPlanningView: React.FC<
                             CDD:{' '}
                           </span>
 
-                          {project.endDate ||
-                            '—'}
+                          {formatDisplayDate(project.endDate)}
                         </div>
                       </td>
 
@@ -3398,50 +3477,86 @@ export const ProjectPlanningView: React.FC<
                           tableCellStyle
                         }
                       >
-                        <button
-                          onClick={() => {
-                            setSelectedProject(
-                              project
-                            );
-
-                            setIsModalOpen(
-                              true
-                            );
-                          }}
+                        <div
                           style={{
-                            display:
-                              'inline-flex',
-                            alignItems:
-                              'center',
-                            gap: '0.3rem',
-                            padding:
-                              '0.35rem 0.65rem',
-                            background:
-                              'rgba(0, 210, 255, 0.12)',
-                            border:
-                              '1px solid rgba(0, 210, 255, 0.3)',
-                            borderRadius:
-                              '6px',
-                            color:
-                              'var(--accent-cyan)',
-                            fontWeight:
-                              700,
-                            fontSize:
-                              '0.72rem',
-                            cursor:
-                              'pointer',
-                            whiteSpace:
-                              'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            flexWrap: 'wrap',
                           }}
                         >
-                          <Edit
-                            size={
-                              13
-                            }
-                          />
-                          View /
-                          Edit
-                        </button>
+                          <button
+                            onClick={() => {
+                              setSelectedProject(
+                                project
+                              );
+
+                              setIsModalOpen(
+                                true
+                              );
+                            }}
+                            style={{
+                              display:
+                                'inline-flex',
+                              alignItems:
+                                'center',
+                              gap: '0.3rem',
+                              padding:
+                                '0.35rem 0.65rem',
+                              background:
+                                'rgba(0, 210, 255, 0.12)',
+                              border:
+                                '1px solid rgba(0, 210, 255, 0.3)',
+                              borderRadius:
+                                '6px',
+                              color:
+                                'var(--accent-cyan)',
+                              fontWeight:
+                                700,
+                              fontSize:
+                                '0.72rem',
+                              cursor:
+                                'pointer',
+                              whiteSpace:
+                                'nowrap',
+                            }}
+                          >
+                            <Edit
+                              size={
+                                13
+                              }
+                            />
+                            View /
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project);
+                            }}
+                            title="Delete project"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              padding: '0.35rem 0.55rem',
+                              background: 'rgba(239, 68, 68, 0.10)',
+                              border: '1px solid rgba(239, 68, 68, 0.35)',
+                              borderRadius: '6px',
+                              color: '#f87171',
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <Trash2 size={13} />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
