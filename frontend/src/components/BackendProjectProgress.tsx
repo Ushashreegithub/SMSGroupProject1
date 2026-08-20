@@ -225,9 +225,11 @@ export const BackendProjectProgress: React.FC = () => {
               const location = proj.location || 'N/A';
               const eqName = proj.equipment_name || proj.equipmentName || 'N/A';
               const eqWeight = proj.equipment_weight || proj.equipmentWeight || 'N/A';
+              const fabWeight = proj.fabrication_weight || proj.fabricationWeight;
               const manager = proj.project_manager || proj.projectManager || 'N/A';
               const zeroDate = proj.zero_date || proj.startDate || 'N/A';
               const cdd = proj.cdd || proj.endDate || 'N/A';
+              const edd = proj.edd || proj.edd_date;
               const totalHours = Number(proj.total_planned_hours || proj.plannedHours || 0);
 
               // Extract tasks
@@ -319,10 +321,13 @@ export const BackendProjectProgress: React.FC = () => {
                         }}
                       >
                         <span>Location: <strong style={{ color: 'var(--accent-cyan)' }}>{location}</strong></span>
-                        <span>Equipment: <strong style={{ color: '#fff' }}>{eqName}</strong> ({eqWeight} kg)</span>
+                        <span>Equipment: <strong style={{ color: '#fff' }}>{eqName}</strong></span>
+                        <span>Eq Weight: <strong style={{ color: '#fff' }}>{eqWeight !== 'N/A' ? `${Number(eqWeight).toLocaleString()} kg` : 'N/A'}</strong></span>
+                        {fabWeight && <span>Fab Weight: <strong style={{ color: '#fff' }}>{Number(fabWeight).toLocaleString()} kg</strong></span>}
                         <span>Manager: <strong style={{ color: '#fff' }}>{manager}</strong></span>
                         <span>Zero Date: <strong style={{ color: 'var(--accent-emerald)' }}>{zeroDate}</strong></span>
                         <span>CDD: <strong style={{ color: 'var(--accent-cyan)' }}>{cdd}</strong></span>
+                        {edd && <span>EDD: <strong style={{ color: '#a855f7' }}>{edd}</strong></span>}
                       </div>
                     </div>
 
