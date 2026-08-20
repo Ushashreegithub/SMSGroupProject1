@@ -26,6 +26,8 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
           padding: "2rem",
           textAlign: "center",
           color: "var(--text-muted)",
+          background: "#ffffff",
+          border: "1px solid #cbd5e1",
         }}
       >
         <Calculator
@@ -34,7 +36,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
           style={{ marginBottom: "0.75rem" }}
         />
 
-        <div style={{ fontWeight: 700, color: "#fff" }}>
+        <div style={{ fontWeight: 700, color: "#0f172a" }}>
           Monthly calculation not available
         </div>
 
@@ -57,10 +59,11 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
     <div
       className="glass-panel"
       style={{
-        background: "rgba(10, 16, 30, 0.7)",
+        background: "#ffffff",
         borderRadius: "12px",
         padding: "1.25rem",
-        border: "1px solid rgba(0, 210, 255, 0.2)",
+        border: "1px solid #cbd5e1",
+        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.04)",
       }}
     >
       {/* HEADER */}
@@ -84,7 +87,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
           <div
             style={{
               padding: "0.5rem",
-              background: "rgba(0, 210, 255, 0.1)",
+              background: "rgba(2, 132, 199, 0.1)",
               borderRadius: "8px",
             }}
           >
@@ -96,7 +99,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
               style={{
                 fontSize: "1.05rem",
                 fontWeight: 800,
-                color: "#fff",
+                color: "#0f172a",
                 margin: 0,
               }}
             >
@@ -138,8 +141,8 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
         <div
           style={{
             padding: "0.8rem",
-            background: "rgba(0, 210, 255, 0.06)",
-            border: "1px solid rgba(0, 210, 255, 0.15)",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
             borderRadius: "8px",
           }}
         >
@@ -148,6 +151,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
               fontSize: "0.65rem",
               color: "var(--text-muted)",
               textTransform: "uppercase",
+              fontWeight: 700,
             }}
           >
             Annual Capacity
@@ -168,8 +172,8 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
         <div
           style={{
             padding: "0.8rem",
-            background: "rgba(16, 185, 129, 0.06)",
-            border: "1px solid rgba(16, 185, 129, 0.15)",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
             borderRadius: "8px",
           }}
         >
@@ -178,6 +182,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
               fontSize: "0.65rem",
               color: "var(--text-muted)",
               textTransform: "uppercase",
+              fontWeight: 700,
             }}
           >
             Daily Capacity
@@ -198,8 +203,8 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
         <div
           style={{
             padding: "0.8rem",
-            background: "rgba(58, 123, 213, 0.06)",
-            border: "1px solid rgba(58, 123, 213, 0.15)",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
             borderRadius: "8px",
           }}
         >
@@ -208,6 +213,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
               fontSize: "0.65rem",
               color: "var(--text-muted)",
               textTransform: "uppercase",
+              fontWeight: 700,
             }}
           >
             Tasks
@@ -231,7 +237,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
         style={{
           overflowX: "auto",
           borderRadius: "8px",
-          border: "1px solid rgba(255,255,255,0.06)",
+          border: "1px solid #cbd5e1",
         }}
       >
         <table
@@ -245,15 +251,16 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
           <thead>
             <tr
               style={{
-                background: "rgba(255,255,255,0.05)",
-                borderBottom: "1px solid var(--border-color)",
+                background: "#f1f5f9",
+                borderBottom: "2px solid #cbd5e1",
               }}
             >
               <th
                 style={{
                   padding: "0.8rem",
                   textAlign: "left",
-                  color: "var(--text-muted)",
+                  color: "#334155",
+                  fontWeight: 700,
                 }}
               >
                 MONTH
@@ -263,7 +270,8 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
                 style={{
                   padding: "0.8rem",
                   textAlign: "center",
-                  color: "var(--text-muted)",
+                  color: "#334155",
+                  fontWeight: 700,
                 }}
               >
                 DAYS
@@ -274,6 +282,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
                   padding: "0.8rem",
                   textAlign: "right",
                   color: "var(--accent-emerald)",
+                  fontWeight: 700,
                 }}
               >
                 PLANT AVAILABLE
@@ -286,6 +295,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
                     padding: "0.8rem",
                     textAlign: "right",
                     color: "var(--accent-cyan)",
+                    fontWeight: 700,
                   }}
                 >
                   {task.name.toUpperCase()}
@@ -299,19 +309,15 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
               <tr
                 key={month.month}
                 style={{
-                  borderBottom:
-                    "1px solid rgba(255,255,255,0.04)",
-                  background:
-                    index % 2 === 0
-                      ? "transparent"
-                      : "rgba(255,255,255,0.015)",
+                  borderBottom: "1px solid #e2e8f0",
+                  background: index % 2 === 0 ? "#ffffff" : "#f8fafc",
                 }}
               >
                 <td
                   style={{
                     padding: "0.7rem 0.8rem",
                     fontWeight: 700,
-                    color: "#fff",
+                    color: "#0f172a",
                   }}
                 >
                   {month.month}
@@ -321,7 +327,7 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
                   style={{
                     padding: "0.7rem 0.8rem",
                     textAlign: "center",
-                    color: "var(--text-muted)",
+                    color: "#475569",
                   }}
                 >
                   {month.days_in_month}
@@ -359,15 +365,15 @@ export const MonthlyTaskBreakdown: React.FC<MonthlyTaskBreakdownProps> = ({
           <tfoot>
             <tr
               style={{
-                background: "rgba(0,210,255,0.08)",
-                borderTop: "2px solid var(--accent-cyan)",
+                background: "#f1f5f9",
+                borderTop: "2px solid #0284c7",
               }}
             >
               <td
                 style={{
                   padding: "0.8rem",
                   fontWeight: 800,
-                  color: "#fff",
+                  color: "#0f172a",
                 }}
               >
                 TOTAL ANNUAL

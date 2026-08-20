@@ -37,7 +37,7 @@ export const UploadView: React.FC<UploadViewProps> = ({ onUploadSuccess }) => {
 
   return (
     <div className="glass-panel" style={{ padding: '2.5rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-main)' }}>
         <UploadCloud color="var(--accent-cyan)" size={28} />
         Upload Monthly Capacity Spreadsheet
       </h3>

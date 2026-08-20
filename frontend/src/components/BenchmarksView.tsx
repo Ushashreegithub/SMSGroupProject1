@@ -17,7 +17,7 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ benchmarks }) =>
 
   return (
     <div className="glass-panel" style={{ padding: '2rem' }}>
-      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-main)' }}>
         <BarChart3 color="var(--accent-cyan)" size={24} />
         Department Capacity Benchmarks & Targets
       </h3>
@@ -30,15 +30,16 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ benchmarks }) =>
           <div 
             key={item.id} 
             style={{ 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              border: '1px solid var(--border-color)', 
+              background: '#ffffff', 
+              border: '1px solid #cbd5e1', 
               borderRadius: '10px', 
-              padding: '1.5rem' 
+              padding: '1.5rem',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>{item.name}</h4>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>{item.name}</h4>
                 <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
                   {item.department}
                 </span>

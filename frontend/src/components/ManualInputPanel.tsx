@@ -577,7 +577,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
               style={{
                 fontSize: "1.2rem",
                 fontWeight: 800,
-                color: "#ffffff",
+                color: "var(--text-main)",
               }}
             >
               Manual Data Input & Planning
@@ -619,12 +619,12 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
       <div
         className="glass-panel"
         style={{
-          background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(10, 16, 30, 0.85))",
-          border: "1px solid rgba(0, 210, 255, 0.3)",
+          background: "#ffffff",
+          border: "1px solid #cbd5e1",
           borderRadius: "12px",
           padding: "1rem 1.25rem",
           marginBottom: "1.25rem",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
+          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.04)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
@@ -653,9 +653,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                   value={activePlanId || ""}
                   onChange={(e) => handleSelectPlan(e.target.value)}
                   style={{
-                    background: "#0F172A",
-                    color: "#FFFFFF",
-                    border: "1px solid var(--accent-cyan)",
+                    background: "#FFFFFF",
+                    color: "#0F172A",
+                    border: "1px solid #cbd5e1",
                     borderRadius: "8px",
                     padding: "0.45rem 0.85rem",
                     fontSize: "0.95rem",
@@ -673,7 +673,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                 </select>
 
                 <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                  Horizon: <strong style={{ color: "#FFF" }}>{plans.find(p => p.plan_id === activePlanId)?.horizon || `Aug ${year} - Jul ${year+1}`}</strong>
+                  Horizon: <strong style={{ color: "#0F172A" }}>{plans.find(p => p.plan_id === activePlanId)?.horizon || `Aug ${year} - Jul ${year+1}`}</strong>
                 </span>
               </div>
             </div>
@@ -829,9 +829,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
           style={{
             padding: "1.25rem",
             background:
-              "rgba(10, 16, 30, 0.6)",
+              "#ffffff",
             border:
-              "1px solid rgba(255, 255, 255, 0.08)",
+              "1px solid #cbd5e1",
             display: "flex",
             flexDirection: "column",
             justifyContent:
@@ -866,7 +866,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                   style={{
                     fontSize: "0.95rem",
                     fontWeight: 700,
-                    color: "#ffffff",
+                    color: "#0f172a",
                   }}
                 >
                   1. Annual Hours Output
@@ -901,9 +901,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
             <div
               style={{
                 background:
-                  "rgba(15, 23, 42, 0.9)",
+                  "#f8fafc",
                 border:
-                  "1px solid rgba(0, 210, 255, 0.35)",
+                  "1px solid #cbd5e1",
                 borderRadius: "8px",
                 padding:
                   "0.85rem 1rem",
@@ -1101,9 +1101,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
           style={{
             padding: "1.25rem",
             background:
-              "rgba(10, 16, 30, 0.6)",
+              "#ffffff",
             border:
-              "1px solid rgba(255, 255, 255, 0.08)",
+              "1px solid #cbd5e1",
           }}
         >
           <div
@@ -1133,7 +1133,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                 style={{
                   fontSize: "0.95rem",
                   fontWeight: 700,
-                  color: "#ffffff",
+                  color: "#0f172a",
                 }}
               >
                 2. Tasks Input Component
@@ -1188,9 +1188,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                         "center",
                       gap: "0.75rem",
                       background:
-                        "rgba(15, 23, 42, 0.8)",
+                        "#f8fafc",
                       border:
-                        "1px solid rgba(255, 255, 255, 0.08)",
+                        "1px solid #e2e8f0",
                       borderRadius: "8px",
                       padding:
                         "0.65rem 0.85rem",
@@ -1203,7 +1203,7 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                             "0.875rem",
                           fontWeight: 700,
                           color:
-                            "#ffffff",
+                            "#0f172a",
                         }}
                       >
                         {task.name}
@@ -1289,9 +1289,9 @@ export const ManualInputPanel: React.FC<ManualInputPanelProps> = ({
                           width:
                             "100%",
                           background:
-                            "rgba(10, 14, 23, 0.8)",
+                            "#ffffff",
                           border:
-                            "1px solid rgba(0, 210, 255, 0.25)",
+                            "1px solid #cbd5e1",
                           borderRadius:
                             "6px",
                           padding:

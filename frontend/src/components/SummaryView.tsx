@@ -121,12 +121,13 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             gap: "0.75rem",
             padding: "0.75rem 1.25rem",
             background:
-              "linear-gradient(90deg, rgba(0, 210, 255, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
+              "#ffffff",
             borderLeft: "4px solid var(--accent-cyan)",
             borderRadius: "8px",
-            borderTop: "1px solid rgba(0, 210, 255, 0.2)",
-            borderRight: "1px solid rgba(0, 210, 255, 0.1)",
-            borderBottom: "1px solid rgba(0, 210, 255, 0.1)",
+            borderTop: "1px solid #cbd5e1",
+            borderRight: "1px solid #cbd5e1",
+            borderBottom: "1px solid #cbd5e1",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
           }}
         >
           <div
@@ -168,7 +169,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               <h2
                 style={{
                   margin: 0,
-                  color: "#ffffff",
+                  color: "#0f172a",
                   fontSize: "1.1rem",
                   fontWeight: 800,
                 }}
@@ -198,11 +199,12 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           <div
             style={{
               padding: "2rem",
-              background: "#101827",
-              border: "1px solid rgba(0, 210, 255, 0.2)",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
               borderRadius: "12px",
               textAlign: "center",
-              color: "var(--text-muted)",
+              color: "#334155",
+              fontWeight: 600,
             }}
           >
             Loading capacity planning data...
@@ -215,11 +217,12 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           <div
             style={{
               padding: "2rem",
-              background: "#101827",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
               borderRadius: "12px",
               textAlign: "center",
-              color: "var(--text-muted)",
+              color: "#334155",
+              fontWeight: 600,
             }}
           >
             No capacity planning data is available yet.
@@ -253,8 +256,8 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
           style={{
             position: "relative",
             padding: "0.35rem 1.25rem",
-            background: "#080e18",
-            border: "1px solid rgba(0, 210, 255, 0.3)",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
             borderRadius: "20px",
             color: "var(--accent-cyan)",
             fontSize: "0.72rem",
@@ -264,7 +267,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             display: "flex",
             alignItems: "center",
             gap: "0.5rem",
-            boxShadow: "0 0 15px rgba(0, 210, 255, 0.15)",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
           }}
         >
           <Sparkles size={12} color="var(--accent-cyan)" />
@@ -293,12 +296,13 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             gap: "0.75rem",
             padding: "0.75rem 1.25rem",
             background:
-              "linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(10, 16, 30, 0.4) 100%)",
+              "#ffffff",
             borderLeft: "4px solid var(--accent-emerald)",
             borderRadius: "8px",
-            borderTop: "1px solid rgba(16, 185, 129, 0.2)",
-            borderRight: "1px solid rgba(16, 185, 129, 0.1)",
-            borderBottom: "1px solid rgba(16, 185, 129, 0.1)",
+            borderTop: "1px solid #cbd5e1",
+            borderRight: "1px solid #cbd5e1",
+            borderBottom: "1px solid #cbd5e1",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
           }}
         >
           <div
@@ -343,7 +347,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
               <h2
                 style={{
                   margin: 0,
-                  color: "#ffffff",
+                  color: "#0f172a",
                   fontSize: "1.1rem",
                   fontWeight: 800,
                 }}

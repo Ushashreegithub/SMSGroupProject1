@@ -34,7 +34,7 @@ export const MonthlyTaskBreakdown: React.FC<
           <h3
             style={{
               margin: 0,
-              color: "#ffffff",
+              color: "#0f172a",
               fontSize: "1.05rem",
               fontWeight: 800,
             }}
@@ -85,10 +85,11 @@ export const MonthlyTaskBreakdown: React.FC<
       style={{
         padding: "1.25rem",
         background:
-          "rgba(10, 16, 30, 0.7)",
+          "#ffffff",
         borderRadius: "10px",
         border:
-          "1px solid rgba(0, 210, 255, 0.2)",
+          "1px solid #cbd5e1",
+        boxShadow: "0 4px 15px rgba(0, 0, 0, 0.04)",
       }}
     >
       {/* HEADER */}
@@ -122,7 +123,7 @@ export const MonthlyTaskBreakdown: React.FC<
                 margin: 0,
                 fontSize: "1.05rem",
                 fontWeight: 800,
-                color: "#ffffff",
+                color: "#0f172a",
               }}
             >
               Calculated Monthly Task Hours
@@ -144,14 +145,14 @@ export const MonthlyTaskBreakdown: React.FC<
         <div
           style={{
             background:
-              "rgba(0, 210, 255, 0.08)",
+              "#f1f5f9",
             padding:
               "0.35rem 0.75rem",
             borderRadius: "6px",
             border:
-              "1px solid rgba(0, 210, 255, 0.2)",
+              "1px solid #cbd5e1",
             color:
-              "var(--accent-cyan)",
+              "#0284c7",
             fontSize: "0.72rem",
           }}
         >
@@ -179,9 +180,9 @@ export const MonthlyTaskBreakdown: React.FC<
             padding: "0.75rem",
             borderRadius: "8px",
             background:
-              "rgba(15, 23, 42, 0.8)",
+              "#f8fafc",
             border:
-              "1px solid rgba(255, 255, 255, 0.08)",
+              "1px solid #e2e8f0",
           }}
         >
           <div
@@ -212,9 +213,9 @@ export const MonthlyTaskBreakdown: React.FC<
             padding: "0.75rem",
             borderRadius: "8px",
             background:
-              "rgba(15, 23, 42, 0.8)",
+              "#f8fafc",
             border:
-              "1px solid rgba(255, 255, 255, 0.08)",
+              "1px solid #e2e8f0",
           }}
         >
           <div
@@ -248,9 +249,9 @@ export const MonthlyTaskBreakdown: React.FC<
             padding: "0.75rem",
             borderRadius: "8px",
             background:
-              "rgba(15, 23, 42, 0.8)",
+              "#f8fafc",
             border:
-              "1px solid rgba(255, 255, 255, 0.08)",
+              "1px solid #e2e8f0",
           }}
         >
           <div
@@ -267,7 +268,7 @@ export const MonthlyTaskBreakdown: React.FC<
             style={{
               fontSize: "1.1rem",
               fontWeight: 800,
-              color: "#ffffff",
+              color: "#0f172a",
               marginTop: "0.2rem",
             }}
           >
@@ -295,9 +296,9 @@ export const MonthlyTaskBreakdown: React.FC<
             <tr
               style={{
                 background:
-                  "rgba(255, 255, 255, 0.05)",
+                  "#f1f5f9",
                 borderBottom:
-                  "1px solid var(--border-color)",
+                  "2px solid #cbd5e1",
               }}
             >
               <th
@@ -306,7 +307,8 @@ export const MonthlyTaskBreakdown: React.FC<
                     "0.75rem",
                   textAlign: "left",
                   color:
-                    "var(--text-muted)",
+                    "#334155",
+                  fontWeight: 700,
                 }}
               >
                 MONTH
@@ -318,7 +320,8 @@ export const MonthlyTaskBreakdown: React.FC<
                     "0.75rem",
                   textAlign: "center",
                   color:
-                    "var(--text-muted)",
+                    "#334155",
+                  fontWeight: 700,
                 }}
               >
                 DAYS
@@ -381,11 +384,11 @@ export const MonthlyTaskBreakdown: React.FC<
                   key={month.month}
                   style={{
                     borderBottom:
-                      "1px solid rgba(255,255,255,0.04)",
+                      "1px solid #e2e8f0",
                     background:
                       index % 2 === 0
-                        ? "transparent"
-                        : "rgba(255,255,255,0.015)",
+                        ? "#ffffff"
+                        : "#f8fafc",
                   }}
                 >
                   <td
@@ -394,7 +397,7 @@ export const MonthlyTaskBreakdown: React.FC<
                         "0.65rem 0.75rem",
                       fontWeight: 700,
                       color:
-                        "#ffffff",
+                        "#0f172a",
                     }}
                   >
                     {month.month}
@@ -407,7 +410,8 @@ export const MonthlyTaskBreakdown: React.FC<
                       textAlign:
                         "center",
                       color:
-                        "var(--text-muted)",
+                        "#0f172a",
+                      fontWeight: 600,
                     }}
                   >
                     {month.days_in_month}d
@@ -455,9 +459,9 @@ export const MonthlyTaskBreakdown: React.FC<
             <tr
               style={{
                 background:
-                  "rgba(0, 210, 255, 0.08)",
+                  "#e0f2fe",
                 borderTop:
-                  "2px solid var(--accent-cyan)",
+                  "2px solid #0284c7",
               }}
             >
               <td
@@ -465,7 +469,7 @@ export const MonthlyTaskBreakdown: React.FC<
                   padding:
                     "0.75rem",
                   fontWeight: 800,
-                  color: "#ffffff",
+                  color: "#0f172a",
                 }}
               >
                 TOTAL ANNUAL
@@ -479,7 +483,7 @@ export const MonthlyTaskBreakdown: React.FC<
                     "center",
                   fontWeight: 800,
                   color:
-                    "var(--accent-cyan)",
+                    "#0284c7",
                 }}
               >
                 {daysInYear}d

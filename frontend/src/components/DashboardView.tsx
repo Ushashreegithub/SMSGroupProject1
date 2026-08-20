@@ -97,7 +97,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
       <div className="glass-panel chart-container">
         <div className="chart-header">
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
               <BarChart2 size={20} color="var(--accent-cyan)" />
               Production Capacity Utilization & Department Breakdown
             </h3>

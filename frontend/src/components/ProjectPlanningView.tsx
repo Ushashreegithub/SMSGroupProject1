@@ -32,7 +32,6 @@ interface Project {
   equipmentName: string;
   equipmentWeight: string;
   fabricationWeight?: string;
-  description: string;
   startDate: string;
   endDate: string;
   edd?: string;
@@ -175,6 +174,8 @@ export const ProjectPlanningView: React.FC<
   const [formData, setFormData] = useState({
     customerName: '',
     wbsNo: '',
+    soNo: '',
+    soLineItems: '',
     projectCode: '',
     location: '',
     projectName: '',
@@ -182,7 +183,6 @@ export const ProjectPlanningView: React.FC<
     equipmentName: '',
     equipmentWeight: '',
     fabricationWeight: '',
-    description: '',
     startDate: '',
     endDate: '',
     edd: '',
@@ -347,7 +347,6 @@ export const ProjectPlanningView: React.FC<
             equipmentWeight: bp.equipment_weight || '',
             fabricationWeight: bp.fabrication_weight || '',
             fabrication_weight: bp.fabrication_weight || '',
-            description: bp.description || '',
             startDate: bp.zero_date || bp.startDate || '',
             endDate: bp.cdd || bp.endDate || '',
             edd: bp.edd || bp.edd_date || '',
@@ -597,6 +596,8 @@ export const ProjectPlanningView: React.FC<
     setFormData({
       customerName: '',
       wbsNo: '',
+      soNo: '',
+      soLineItems: '',
       projectCode: '',
       location: '',
       projectName: '',
@@ -604,7 +605,6 @@ export const ProjectPlanningView: React.FC<
       equipmentName: '',
       equipmentWeight: '',
       fabricationWeight: '',
-      description: '',
       startDate: '',
       endDate: '',
       edd: '',
@@ -932,9 +932,6 @@ export const ProjectPlanningView: React.FC<
       fabrication_weight:
         formData.fabricationWeight,
 
-      description:
-        formData.description,
-
       startDate:
         formData.startDate,
 
@@ -1144,7 +1141,7 @@ export const ProjectPlanningView: React.FC<
             <h2
               style={{
                 margin: 0,
-                color: '#ffffff',
+                color: 'var(--text-main)',
                 fontSize: '1.35rem',
                 fontWeight: 800,
               }}
@@ -1224,7 +1221,7 @@ export const ProjectPlanningView: React.FC<
               <h3
                 style={{
                   margin: 0,
-                  color: '#ffffff',
+                  color: 'var(--text-main)',
                   fontSize: '1.1rem',
                   fontWeight: 800,
                 }}
@@ -1342,7 +1339,7 @@ export const ProjectPlanningView: React.FC<
               style={{
                 display: 'grid',
                 gridTemplateColumns:
-                  '1fr 1fr',
+                  '1fr 1fr 1fr 1fr',
                 gap: '1rem',
                 marginBottom:
                   '1rem',
@@ -1377,6 +1374,50 @@ export const ProjectPlanningView: React.FC<
                   message={
                     validationErrors.wbsNo
                   }
+                />
+              </div>
+
+              {/* SO NO */}
+
+              <div>
+                <label className="project-form-label">
+                  <Hash size={14} />
+                  SO No.
+                </label>
+
+                <input
+                  type="text"
+                  name="soNo"
+                  value={
+                    formData.soNo
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="e.g. SO-98421"
+                  className="project-form-input"
+                />
+              </div>
+
+              {/* SO LINE ITEMS */}
+
+              <div>
+                <label className="project-form-label">
+                  <Tag size={14} />
+                  SO Line Items
+                </label>
+
+                <input
+                  type="text"
+                  name="soLineItems"
+                  value={
+                    formData.soLineItems
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="e.g. Item 10, 20"
+                  className="project-form-input"
                 />
               </div>
 
@@ -1484,36 +1525,6 @@ export const ProjectPlanningView: React.FC<
                   className="project-form-input"
                 />
               </div>
-            </div>
-
-            {/* DESCRIPTION */}
-
-            <div
-              style={{
-                marginBottom: '1rem',
-              }}
-            >
-              <label className="project-form-label">
-                <FileText size={14} />
-                Project Description
-              </label>
-
-              <textarea
-                name="description"
-                value={
-                  formData.description
-                }
-                onChange={
-                  handleChange
-                }
-                placeholder="Enter project description"
-                rows={4}
-                className="project-form-input"
-                style={{
-                  resize: 'vertical',
-                  minHeight: '90px',
-                }}
-              />
             </div>
 
             {/* ROW 4 - DATES (ZERO DATE, CDD, EDD) */}
@@ -1668,9 +1679,9 @@ export const ProjectPlanningView: React.FC<
                   '1.5rem',
                 padding: '1.25rem',
                 background:
-                  'rgba(0, 210, 255, 0.03)',
+                  '#f8fafc',
                 border:
-                  '1px solid rgba(0, 210, 255, 0.2)',
+                  '1px solid #cbd5e1',
                 borderRadius: '12px',
               }}
             >
@@ -1692,7 +1703,7 @@ export const ProjectPlanningView: React.FC<
                   <h4
                     style={{
                       margin: 0,
-                      color: '#ffffff',
+                      color: 'var(--text-main)',
                       fontSize:
                         '0.95rem',
                       fontWeight: 800,
@@ -1848,15 +1859,15 @@ export const ProjectPlanningView: React.FC<
                       padding:
                         '1.15rem',
                       background:
-                        'linear-gradient(135deg, rgba(14, 23, 38, 0.9) 0%, rgba(9, 13, 22, 0.9) 100%)',
+                        '#ffffff',
                       border:
-                        '1px solid rgba(0, 210, 255, 0.3)',
+                        '1px solid #cbd5e1',
                       borderRadius:
                         '12px',
                       marginBottom:
                         '1.25rem',
                       boxShadow:
-                        '0 8px 30px rgba(0, 0, 0, 0.35)',
+                        '0 4px 15px rgba(0, 0, 0, 0.04)',
                     }}
                   >
                     {/* BANNER HEADER */}
@@ -1881,7 +1892,7 @@ export const ProjectPlanningView: React.FC<
                           style={{
                             margin: 0,
                             color:
-                              '#ffffff',
+                              '#0f172a',
                             fontSize:
                               '0.95rem',
                             fontWeight:
@@ -2296,18 +2307,20 @@ export const ProjectPlanningView: React.FC<
                         }
                         style={{
                           background:
-                            'rgba(10, 16, 30, 0.7)',
+                            '#ffffff',
                           border:
                             tIdx ===
                             activeTaskIdx
-                              ? '1px solid rgba(0, 210, 255, 0.4)'
-                              : '1px solid rgba(255, 255, 255, 0.1)',
+                              ? '1px solid #0284c7'
+                              : '1px solid #cbd5e1',
                           borderRadius:
                             '10px',
                           padding:
                             '1rem',
                           cursor:
                             'pointer',
+                          boxShadow:
+                            '0 2px 8px rgba(0, 0, 0, 0.03)',
                         }}
                       >
                         <div
@@ -2332,7 +2345,7 @@ export const ProjectPlanningView: React.FC<
                                 tIdx ===
                                 activeTaskIdx
                                   ? 'var(--accent-cyan)'
-                                  : '#fff',
+                                  : '#0f172a',
                             }}
                           >
                             Task #
@@ -3141,9 +3154,15 @@ export const ProjectPlanningView: React.FC<
           className="glass-panel"
           style={{
             padding:
-              '1.25rem',
+              '1.5rem',
+            background:
+              '#ffffff',
             border:
-              '1px solid rgba(255,255,255,0.08)',
+              '1px solid #cbd5e1',
+            borderRadius:
+              '12px',
+            boxShadow:
+              '0 4px 15px rgba(0, 0, 0, 0.04)',
             overflowX:
               'auto',
           }}
@@ -3164,7 +3183,7 @@ export const ProjectPlanningView: React.FC<
               <h3
                 style={{
                   color:
-                    '#ffffff',
+                    'var(--text-main)',
                   margin: 0,
                   fontSize:
                     '1rem',
@@ -3207,9 +3226,11 @@ export const ProjectPlanningView: React.FC<
               <tr
                 style={{
                   background:
-                    'rgba(255,255,255,0.04)',
+                    '#f1f5f9',
                   color:
-                    'var(--text-muted)',
+                    '#0f172a',
+                  borderBottom:
+                    '2px solid #cbd5e1',
                 }}
               >
                 <th style={tableHeaderStyle}>
@@ -3222,6 +3243,14 @@ export const ProjectPlanningView: React.FC<
 
                 <th style={tableHeaderStyle}>
                   WBS No.
+                </th>
+
+                <th style={tableHeaderStyle}>
+                  SO No.
+                </th>
+
+                <th style={tableHeaderStyle}>
+                  SO Line Items
                 </th>
 
                 <th style={tableHeaderStyle}>
@@ -3317,7 +3346,7 @@ export const ProjectPlanningView: React.FC<
                       }
                       style={{
                         borderBottom:
-                          '1px solid rgba(255,255,255,0.05)',
+                          '1px solid #e2e8f0',
                       }}
                     >
                       {/* SERIAL NUMBER */}
@@ -3343,30 +3372,11 @@ export const ProjectPlanningView: React.FC<
                         <strong
                           style={{
                             color:
-                              '#ffffff',
+                              'var(--text-main)',
                           }}
                         >
                           {cName}
                         </strong>
-
-                        {project.description && (
-                          <div
-                            style={{
-                              color:
-                                'var(--text-dim)',
-                              fontSize:
-                                '0.68rem',
-                              marginTop:
-                                '0.2rem',
-                              maxWidth:
-                                '250px',
-                            }}
-                          >
-                            {
-                              project.description
-                            }
-                          </div>
-                        )}
                       </td>
 
                       {/* WBS */}
@@ -3386,6 +3396,26 @@ export const ProjectPlanningView: React.FC<
                         >
                           {wbs}
                         </span>
+                      </td>
+
+                      {/* SO NO */}
+
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        {project.so_no || project.soNo || '—'}
+                      </td>
+
+                      {/* SO LINE ITEMS */}
+
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        {project.so_line_items || project.soLineItems || '—'}
                       </td>
 
                       {/* PROJECT CODE */}
@@ -3717,15 +3747,19 @@ export const ProjectPlanningView: React.FC<
 
 const tableHeaderStyle: React.CSSProperties =
   {
-    padding: '0.75rem',
+    padding: '0.85rem 1rem',
     textAlign: 'left',
-    fontWeight: 700,
+    fontWeight: 800,
+    fontSize: '0.82rem',
+    color: '#0f172a',
     whiteSpace: 'nowrap',
   };
 
 const tableCellStyle: React.CSSProperties =
   {
-    padding: '0.75rem',
-    color: 'var(--text-main)',
-    verticalAlign: 'top',
+    padding: '0.85rem 1rem',
+    color: '#0f172a',
+    fontSize: '0.85rem',
+    fontWeight: 500,
+    verticalAlign: 'middle',
   };

@@ -52,19 +52,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="sidebar">
       <div className="brand" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' }}>
-        <SmsGroupLogo height={28} textColor="#ffffff" />
+        <SmsGroupLogo height={30} textColor="#ffffff" />
         <div className="brand-text">
-          <h1 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginTop: '0.2rem' }}>
+          <h1 style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: 600, letterSpacing: '0.05em', marginTop: '0.2rem' }}>
             Capacity Planning
           </h1>
-          <span style={{ fontSize: '0.65rem', color: isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.65rem', color: isAdmin ? '#38bdf8' : '#34d399', fontWeight: 700 }}>
             {isAdmin ? 'ENTERPRISE PLANT (ADMIN)' : 'VIEW ONLY PORTAL'}
           </span>
         </div>
       </div>
 
       <div className="nav-menu">
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', letterSpacing: '0.1em', paddingLeft: '0.75rem', marginBottom: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.1em', paddingLeft: '0.75rem', marginBottom: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span>CORE OPERATIONS</span>
           {!isAdmin && (
             <span style={{ fontSize: '0.65rem', color: 'var(--accent-amber)', background: 'rgba(255,171,0,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -93,12 +93,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-footer">
         {currentUser && (
           <div className="user-profile-badge">
-            <div className="avatar-circle" style={{ background: isAdmin ? 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))' : 'linear-gradient(135deg, #475569, #334155)' }}>
+            <div className="avatar-circle" style={{ background: isAdmin ? 'linear-gradient(135deg, #0284c7, #2563eb)' : 'linear-gradient(135deg, #475569, #334155)' }}>
               {getInitials(currentUser.name || currentUser.username)}
             </div>
             <div className="user-info">
               <span className="user-name">{currentUser.name || currentUser.username}</span>
-              <span className="user-role" style={{ color: isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span className="user-role" style={{ color: isAdmin ? '#38bdf8' : '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {!isAdmin && <Eye size={12} />}
                 {isAdmin ? 'Administrator' : 'User (View Only)'}
               </span>
@@ -107,12 +107,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-            <ShieldCheck size={15} color={isAdmin ? 'var(--accent-cyan)' : 'var(--accent-emerald)'} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+            <ShieldCheck size={15} color={isAdmin ? '#38bdf8' : '#34d399'} />
             <span>{isAdmin ? 'Admin Auth Granted' : 'Read-Only Permission'}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-            <Cpu size={15} color="var(--accent-cyan)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+            <Cpu size={15} color="#38bdf8" />
             <span>Capacity Engine v2.4</span>
           </div>
         </div>

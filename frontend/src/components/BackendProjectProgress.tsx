@@ -124,10 +124,10 @@ export const BackendProjectProgress: React.FC = () => {
         className="glass-panel"
         style={{
           padding: '1.25rem 1.5rem',
-          background: 'linear-gradient(135deg, rgba(13, 25, 48, 0.9) 0%, rgba(10, 16, 30, 0.95) 100%)',
+          background: '#ffffff',
           borderRadius: '12px',
-          border: '1px solid rgba(0, 210, 255, 0.3)',
-          boxShadow: '0 8px 32px rgba(0, 210, 255, 0.08)',
+          border: '1px solid #cbd5e1',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -137,7 +137,7 @@ export const BackendProjectProgress: React.FC = () => {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.15rem', fontWeight: 800 }}>
+                <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.15rem', fontWeight: 800 }}>
                   Project Planning Breakdown & Task Progress Summary
                 </h3>
                 <span
@@ -149,7 +149,7 @@ export const BackendProjectProgress: React.FC = () => {
                     background: 'rgba(16, 185, 129, 0.15)',
                     border: '1px solid rgba(16, 185, 129, 0.3)',
                     borderRadius: '20px',
-                    color: '#10b981',
+                    color: '#059669',
                     fontSize: '0.72rem',
                     fontWeight: 700,
                   }}
@@ -170,10 +170,10 @@ export const BackendProjectProgress: React.FC = () => {
               alignItems: 'center',
               gap: '0.4rem',
               padding: '0.55rem 1rem',
-              background: 'rgba(0, 210, 255, 0.1)',
-              border: '1px solid rgba(0, 210, 255, 0.3)',
+              background: '#e0f2fe',
+              border: '1px solid #0284c7',
               borderRadius: '8px',
-              color: 'var(--accent-cyan)',
+              color: '#0284c7',
               fontSize: '0.78rem',
               fontWeight: 700,
               cursor: 'pointer',
@@ -189,13 +189,14 @@ export const BackendProjectProgress: React.FC = () => {
         className="glass-panel"
         style={{
           padding: '1.5rem',
-          background: 'rgba(10, 16, 30, 0.8)',
+          background: '#ffffff',
           borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid #cbd5e1',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.04)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ margin: 0, color: '#ffffff', fontSize: '1.05rem', fontWeight: 800 }}>
+          <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem', fontWeight: 800 }}>
             Planned Projects & Calculated Monthly Task Hours ({projects.length})
           </h3>
         </div>
@@ -205,13 +206,13 @@ export const BackendProjectProgress: React.FC = () => {
             style={{
               padding: '3rem 2rem',
               textAlign: 'center',
-              background: 'rgba(15, 23, 42, 0.5)',
+              background: '#f8fafc',
               borderRadius: '10px',
-              border: '1px dashed rgba(255, 255, 255, 0.15)',
+              border: '1px dashed #cbd5e1',
             }}
           >
             <Layers size={32} color="var(--accent-cyan)" style={{ marginBottom: '0.75rem', opacity: 0.8 }} />
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>No Projects Created Yet</div>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>No Projects Created Yet</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
               Add a new project in the <strong>Project Planning</strong> section to view its detailed monthly capacity breakdown here.
             </div>
@@ -253,11 +254,11 @@ export const BackendProjectProgress: React.FC = () => {
                 <div
                   key={proj.id || wbsNo + pIdx}
                   style={{
-                    background: 'rgba(15, 23, 42, 0.65)',
+                    background: '#ffffff',
                     borderRadius: '12px',
                     padding: '1.25rem 1.5rem',
-                    border: '1px solid rgba(0, 210, 255, 0.25)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.04)',
                   }}
                 >
                   {/* PROJECT HEADER INFORMATION (READ ONLY) */}
@@ -269,7 +270,7 @@ export const BackendProjectProgress: React.FC = () => {
                       flexWrap: 'wrap',
                       gap: '1rem',
                       paddingBottom: '1rem',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderBottom: '1px solid #e2e8f0',
                       marginBottom: '1rem',
                     }}
                   >
@@ -278,13 +279,13 @@ export const BackendProjectProgress: React.FC = () => {
                         <span
                           style={{
                             padding: '0.25rem 0.6rem',
-                            background: 'rgba(0, 210, 255, 0.15)',
-                            color: 'var(--accent-cyan)',
+                            background: 'rgba(2, 132, 199, 0.1)',
+                            color: '#0284c7',
                             borderRadius: '6px',
                             fontSize: '0.78rem',
                             fontWeight: 800,
                             fontFamily: 'monospace',
-                            border: '1px solid rgba(0, 210, 255, 0.3)',
+                            border: '1px solid rgba(2, 132, 199, 0.25)',
                           }}
                         >
                           WBS: {wbsNo}
@@ -294,7 +295,7 @@ export const BackendProjectProgress: React.FC = () => {
                             style={{
                               padding: '0.25rem 0.6rem',
                               background: 'rgba(168, 85, 247, 0.15)',
-                              color: '#a855f7',
+                              color: '#9333ea',
                               borderRadius: '6px',
                               fontSize: '0.78rem',
                               fontWeight: 800,
@@ -305,7 +306,7 @@ export const BackendProjectProgress: React.FC = () => {
                             Code: {projectCode}
                           </span>
                         )}
-                        <h4 style={{ margin: 0, color: '#ffffff', fontSize: '1.1rem', fontWeight: 800 }}>
+                        <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem', fontWeight: 800 }}>
                           Customer: {customerName}
                         </h4>
                       </div>
@@ -317,17 +318,18 @@ export const BackendProjectProgress: React.FC = () => {
                           gap: '1.2rem',
                           marginTop: '0.6rem',
                           fontSize: '0.8rem',
-                          color: 'var(--text-muted)',
+                          color: '#334155',
+                          fontWeight: 500,
                         }}
                       >
-                        <span>Location: <strong style={{ color: 'var(--accent-cyan)' }}>{location}</strong></span>
-                        <span>Equipment: <strong style={{ color: '#fff' }}>{eqName}</strong></span>
-                        <span>Eq Weight: <strong style={{ color: '#fff' }}>{eqWeight !== 'N/A' ? `${Number(eqWeight).toLocaleString()} kg` : 'N/A'}</strong></span>
-                        {fabWeight && <span>Fab Weight: <strong style={{ color: '#fff' }}>{Number(fabWeight).toLocaleString()} kg</strong></span>}
-                        <span>Manager: <strong style={{ color: '#fff' }}>{manager}</strong></span>
-                        <span>Zero Date: <strong style={{ color: 'var(--accent-emerald)' }}>{zeroDate}</strong></span>
-                        <span>CDD: <strong style={{ color: 'var(--accent-cyan)' }}>{cdd}</strong></span>
-                        {edd && <span>EDD: <strong style={{ color: '#a855f7' }}>{edd}</strong></span>}
+                        <span>Location: <strong style={{ color: '#0284c7' }}>{location}</strong></span>
+                        <span>Equipment: <strong style={{ color: '#0f172a' }}>{eqName}</strong></span>
+                        <span>Eq Weight: <strong style={{ color: '#0f172a' }}>{eqWeight !== 'N/A' ? `${Number(eqWeight).toLocaleString()} kg` : 'N/A'}</strong></span>
+                        {fabWeight && <span>Fab Weight: <strong style={{ color: '#0f172a' }}>{Number(fabWeight).toLocaleString()} kg</strong></span>}
+                        <span>Manager: <strong style={{ color: '#0f172a' }}>{manager}</strong></span>
+                        <span>Zero Date: <strong style={{ color: '#059669' }}>{zeroDate}</strong></span>
+                        <span>CDD: <strong style={{ color: '#0284c7' }}>{cdd}</strong></span>
+                        {edd && <span>EDD: <strong style={{ color: '#9333ea' }}>{edd}</strong></span>}
                       </div>
                     </div>
 
@@ -335,16 +337,16 @@ export const BackendProjectProgress: React.FC = () => {
                     <div
                       style={{
                         padding: '0.6rem 1rem',
-                        background: 'rgba(0, 210, 255, 0.08)',
+                        background: '#f8fafc',
                         borderRadius: '8px',
-                        border: '1px solid rgba(0, 210, 255, 0.2)',
+                        border: '1px solid #cbd5e1',
                         textAlign: 'right',
                       }}
                     >
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                      <div style={{ fontSize: '0.65rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>
                         Total Planned Hours
                       </div>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.1rem' }}>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0284c7', marginTop: '0.1rem' }}>
                         {totalHours.toLocaleString()} hrs
                       </div>
                     </div>
@@ -374,10 +376,10 @@ export const BackendProjectProgress: React.FC = () => {
                         <div
                           key={tIdx}
                           style={{
-                            background: 'rgba(10, 16, 30, 0.8)',
+                            background: '#f8fafc',
                             borderRadius: '10px',
                             padding: '1rem 1.25rem',
-                            border: '1px solid rgba(255, 255, 255, 0.07)',
+                            border: '1px solid #cbd5e1',
                           }}
                         >
                           {/* TASK SUB HEADER */}
@@ -392,20 +394,20 @@ export const BackendProjectProgress: React.FC = () => {
                             }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                              <Wrench size={18} color="var(--accent-cyan)" />
-                              <span style={{ fontWeight: 800, color: '#ffffff', fontSize: '0.95rem' }}>
+                              <Wrench size={18} color="#0284c7" />
+                              <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
                                 Task: {tName}
                               </span>
 
                               {location && (
-                                <span style={{ padding: '0.15rem 0.5rem', background: 'rgba(58, 123, 213, 0.2)', color: 'var(--accent-blue)', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                <span style={{ padding: '0.15rem 0.5rem', background: '#e0f2fe', color: '#0284c7', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
                                   Location: {location}
                                 </span>
                               )}
                             </div>
 
-                            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                              Allocated: <strong style={{ color: 'var(--accent-cyan)' }}>{tHours.toLocaleString()} hrs</strong> ({tDuration} Months Duration)
+                            <div style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>
+                              Allocated: <strong style={{ color: '#0284c7' }}>{tHours.toLocaleString()} hrs</strong> ({tDuration} Months Duration)
                             </div>
                           </div>
 
@@ -416,13 +418,13 @@ export const BackendProjectProgress: React.FC = () => {
                                 key={m.month_index}
                                 style={{
                                   padding: '0.7rem 0.8rem',
-                                  background: m.month_index === 1 ? 'rgba(0, 210, 255, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                                  border: m.month_index === 1 ? '1px solid rgba(0, 210, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                  background: m.month_index === 1 ? '#e0f2fe' : '#ffffff',
+                                  border: m.month_index === 1 ? '1px solid #0284c7' : '1px solid #cbd5e1',
                                   borderRadius: '8px',
                                   textAlign: 'center',
                                 }}
                               >
-                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                                <div style={{ fontSize: '0.68rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>
                                   Month {m.month_index} ({m.month_label})
                                 </div>
 
@@ -430,7 +432,7 @@ export const BackendProjectProgress: React.FC = () => {
                                   style={{
                                     fontSize: '1.15rem',
                                     fontWeight: 800,
-                                    color: m.month_index === 1 ? 'var(--accent-cyan)' : '#ffffff',
+                                    color: m.month_index === 1 ? '#0284c7' : '#0f172a',
                                     marginTop: '0.2rem',
                                   }}
                                 >
@@ -441,7 +443,7 @@ export const BackendProjectProgress: React.FC = () => {
                                   style={{
                                     fontSize: '0.7rem',
                                     fontWeight: 700,
-                                    color: Math.abs(m.percentage - 15.0) < 0.1 ? '#00d2ff' : '#10b981',
+                                    color: Math.abs(m.percentage - 15.0) < 0.1 ? '#0284c7' : '#059669',
                                     marginTop: '0.15rem',
                                   }}
                                 >

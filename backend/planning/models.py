@@ -67,6 +67,8 @@ class CapacityPlan(models.Model):
 class Project(models.Model):
     customer_name = models.CharField(max_length=256, blank=True, default="")
     wbs_no = models.CharField(max_length=128, blank=True, default="")
+    so_no = models.CharField(max_length=128, blank=True, default="")
+    so_line_items = models.CharField(max_length=256, blank=True, default="")
     project_code = models.CharField(max_length=128, blank=True, default="")
     location = models.CharField(max_length=128, blank=True, default="")
     project_name = models.CharField(max_length=256, blank=True, default="")
@@ -74,7 +76,6 @@ class Project(models.Model):
     equipment_name = models.CharField(max_length=256, blank=True, default="")
     equipment_weight = models.CharField(max_length=128, blank=True, default="")
     fabrication_weight = models.CharField(max_length=128, blank=True, default="")
-    description = models.TextField(blank=True, default="")
     zero_date = models.DateField(null=True, blank=True)
     cdd = models.DateField(null=True, blank=True)
     edd = models.DateField(null=True, blank=True)

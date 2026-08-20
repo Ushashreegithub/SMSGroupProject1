@@ -60,13 +60,14 @@ export const TaskScheduleSlider: React.FC<TaskScheduleSliderProps> = ({
   return (
     <div
       style={{
-        background: 'rgba(10, 16, 30, 0.85)',
+        background: '#ffffff',
         padding: '1rem 1.25rem',
         borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        border: '1px solid #cbd5e1',
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
       }}
     >
       {/* Header Info Bar */}
@@ -102,22 +103,22 @@ export const TaskScheduleSlider: React.FC<TaskScheduleSliderProps> = ({
             gap: '0.5rem',
             fontSize: '0.75rem',
             fontWeight: 800,
-            color: '#10b981',
-            background: 'rgba(16, 185, 129, 0.12)',
+            color: '#059669',
+            background: '#f0fdf4',
             padding: '0.25rem 0.75rem',
             borderRadius: '16px',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            border: '1px solid #bbf7d0',
           }}
         >
-          <span>Kickoff: <strong style={{ color: '#fff' }}>{startLabel}</strong></span>
-          <span style={{ color: 'rgba(255,255,255,0.4)' }}>➔</span>
-          <span>Completion: <strong style={{ color: '#fff' }}>{endLabel}</strong></span>
+          <span>Kickoff: <strong style={{ color: '#0f172a' }}>{startLabel}</strong></span>
+          <span style={{ color: '#94a3b8' }}>➔</span>
+          <span>Completion: <strong style={{ color: '#0f172a' }}>{endLabel}</strong></span>
           <span
             style={{
               marginLeft: '0.25rem',
               paddingLeft: '0.4rem',
-              borderLeft: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#34d399',
+              borderLeft: '1px solid #bbf7d0',
+              color: '#059669',
             }}
           >
             ({durationMonths} {durationMonths === 1 ? 'Month' : 'Months'})
@@ -218,14 +219,14 @@ export const TaskScheduleSlider: React.FC<TaskScheduleSliderProps> = ({
                   background: isStart || isEnd
                     ? taskColor
                     : inRange
-                    ? `${taskColor}25`
-                    : 'rgba(255, 255, 255, 0.03)',
+                    ? '#e0f2fe'
+                    : '#f8fafc',
                   border: isStart || isEnd
                     ? `1px solid ${taskColor}`
                     : inRange
-                    ? `1px solid ${taskColor}55`
-                    : '1px solid rgba(255, 255, 255, 0.06)',
-                  color: isStart || isEnd ? '#000000' : inRange ? '#ffffff' : 'var(--text-muted)',
+                    ? '1px solid #7dd3fc'
+                    : '1px solid #cbd5e1',
+                  color: isStart || isEnd ? '#ffffff' : inRange ? '#0284c7' : '#475569',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   textAlign: 'center',

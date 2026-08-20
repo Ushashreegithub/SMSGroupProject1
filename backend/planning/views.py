@@ -721,6 +721,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = Project.objects.create(
             customer_name=customer_name,
             wbs_no=wbs_no,
+            so_no=data.get('soNo', data.get('so_no', '')),
+            so_line_items=data.get('soLineItems', data.get('so_line_items', '')),
             project_code=project_code,
             location=location,
             project_name=project_name,
@@ -728,7 +730,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             equipment_name=data.get('equipmentName', data.get('equipment_name', '')),
             equipment_weight=data.get('equipmentWeight', data.get('equipment_weight', '')),
             fabrication_weight=data.get('fabricationWeight', data.get('fabrication_weight', '')),
-            description=data.get('description', ''),
             zero_date=data.get('startDate') or data.get('zero_date') or None,
             cdd=data.get('endDate') or data.get('cdd') or None,
             edd=data.get('edd') or data.get('edd_date') or None,
@@ -837,6 +838,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
             instance.customer_name = data.get('customerName') or data.get('customer_name')
         if 'wbsNo' in data or 'wbs_no' in data:
             instance.wbs_no = data.get('wbsNo') or data.get('wbs_no')
+        if 'soNo' in data or 'so_no' in data:
+            instance.so_no = data.get('soNo') or data.get('so_no')
+        if 'soLineItems' in data or 'so_line_items' in data:
+            instance.so_line_items = data.get('soLineItems') or data.get('so_line_items')
         if 'projectCode' in data or 'project_code' in data:
             instance.project_code = data.get('projectCode') or data.get('project_code')
         if 'location' in data:
