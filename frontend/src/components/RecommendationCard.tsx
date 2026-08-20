@@ -56,13 +56,14 @@ export function RecommendationCard() {
           marginBottom: 25,
         }}
       >
-        <Sparkles color="gold" size={28} />
+        <Sparkles color="#d97706" size={28} />
 
         <div>
           <h2
             style={{
               margin: 0,
-              fontWeight: 700,
+              fontWeight: 800,
+              color: "#0f172a",
             }}
           >
             AI Recommendations
@@ -96,8 +97,8 @@ export function RecommendationCard() {
               alignItems: "center",
               padding: 18,
               borderRadius: 12,
-              border: "1px solid rgba(255,255,255,.08)",
-              background: "rgba(255,255,255,.02)",
+              border: "1px solid #cbd5e1",
+              background: "#f8fafc",
             }}
           >
             <div
@@ -114,6 +115,8 @@ export function RecommendationCard() {
                   style={{
                     margin: 0,
                     fontSize: 18,
+                    color: "#0f172a",
+                    fontWeight: 700,
                   }}
                 >
                   {item.title}
@@ -166,15 +169,15 @@ export function RecommendationCard() {
           marginTop: 30,
           padding: 20,
           borderRadius: 12,
-          background: "rgba(0,255,255,.04)",
-          border: "1px solid rgba(0,255,255,.08)",
+          background: "#f0fdf4",
+          border: "1px solid #bbf7d0",
           display: "flex",
           gap: 12,
           alignItems: "center",
         }}
       >
         <CheckCircle2
-          color="#00e676"
+          color="#059669"
           size={28}
         />
 
@@ -183,6 +186,7 @@ export function RecommendationCard() {
             style={{
               fontWeight: 700,
               marginBottom: 4,
+              color: "#0f172a",
             }}
           >
             Overall Planning Status

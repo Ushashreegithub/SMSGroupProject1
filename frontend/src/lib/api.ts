@@ -497,7 +497,6 @@ export interface BackendProject {
   equipment_name?: string;
   equipment_weight?: string;
   fabrication_weight?: string;
-  description?: string;
   zero_date?: string;
   cdd?: string;
   edd?: string;

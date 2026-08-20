@@ -83,6 +83,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     id: '',
     customerName: '',
     wbsNo: '',
+    soNo: '',
+    soLineItems: '',
     projectCode: '',
     location: '',
     equipmentName: '',
@@ -113,6 +115,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         id: project.id,
         customerName: cName,
         wbsNo: wbs,
+        soNo: project.so_no || project.soNo || '',
+        soLineItems: project.so_line_items || project.soLineItems || '',
         projectCode: pCode,
         location: loc,
         projectName: cName,
@@ -264,6 +268,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
       customer_name: cName,
       wbsNo: wbs,
       wbs_no: wbs,
+      soNo: projectMeta.soNo,
+      so_no: projectMeta.soNo,
+      soLineItems: projectMeta.soLineItems,
+      so_line_items: projectMeta.soLineItems,
       projectCode: pCode,
       project_code: pCode,
       location: primaryTask.location || projectMeta.location || 'Khordha',
@@ -462,31 +470,31 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     >
       <div
         style={{
-          background: 'linear-gradient(135deg, #0e1726 0%, #090d16 100%)',
-          border: '1px solid rgba(0, 210, 255, 0.25)',
+          background: '#ffffff',
+          border: '1px solid #cbd5e1',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '960px',
           maxHeight: '92vh',
           overflowY: 'auto',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
-          color: '#fff',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
+          color: '#0f172a',
         }}
       >
         {/* MODAL HEADER */}
         <div
           style={{
             padding: '1.25rem 1.5rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid #e2e8f0',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: '#f8fafc',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Building size={20} color="var(--accent-cyan)" />
-            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
               Edit Project Details & Tasks: <span style={{ color: 'var(--accent-cyan)' }}>{projectMeta.customerName}</span>
             </h3>
           </div>
@@ -512,8 +520,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           <div
             style={{
               padding: '1rem 1.25rem',
-              background: 'rgba(15, 23, 42, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               borderRadius: '12px',
             }}
           >
@@ -524,7 +532,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             {/* ROW 1: Customer Name & Location */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Customer Name *
                 </label>
                 <input
@@ -536,17 +544,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Primary Location
                 </label>
                 <input
@@ -558,20 +567,21 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
             </div>
 
-            {/* ROW 2: WBS No & Project Code */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
+            {/* ROW 2: WBS No, SO No, SO Line Items & Project Code */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   WBS No. *
                 </label>
                 <input
@@ -583,10 +593,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(0, 210, 255, 0.3)',
+                    background: '#ffffff',
+                    border: '1px solid #0284c7',
                     borderRadius: '8px',
-                    color: 'var(--accent-cyan)',
+                    color: '#0284c7',
                     fontWeight: 700,
                     fontSize: '0.88rem',
                   }}
@@ -594,7 +604,53 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
+                  SO No.
+                </label>
+                <input
+                  type="text"
+                  name="soNo"
+                  value={projectMeta.soNo}
+                  onChange={handleMetaChange}
+                  placeholder="e.g. SO-98421"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
+                  SO Line Items
+                </label>
+                <input
+                  type="text"
+                  name="soLineItems"
+                  value={projectMeta.soLineItems}
+                  onChange={handleMetaChange}
+                  placeholder="e.g. Item 10, 20"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Project Code
                 </label>
                 <input
@@ -605,11 +661,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
@@ -618,7 +675,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             {/* ROW 3: Equipment Name, Equipment Weight & Fabrication Weight */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Equipment Name
                 </label>
                 <input
@@ -629,17 +686,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Equipment Weight (kg)
                 </label>
                 <input
@@ -650,17 +708,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Fabrication Weight (kg)
                 </label>
                 <input
@@ -671,11 +730,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
@@ -684,7 +744,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             {/* ROW 4: Dates & Project Manager */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Zero Date (Start) *
                 </label>
                 <input
@@ -696,17 +756,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.85rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   CDD (End Date) *
                 </label>
                 <input
@@ -718,17 +779,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.85rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   EDD
                 </label>
                 <input
@@ -739,17 +801,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.85rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#334155', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Project Manager *
                 </label>
                 <input
@@ -761,11 +824,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',
-                    background: 'rgba(10, 16, 30, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: '#0f172a',
                     fontSize: '0.88rem',
+                    fontWeight: 600,
                   }}
                 />
               </div>
@@ -776,8 +840,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           <div
             style={{
               padding: '1.25rem',
-              background: 'rgba(0, 210, 255, 0.03)',
-              border: '1px solid rgba(0, 210, 255, 0.25)',
+              background: '#f8fafc',
+              border: '1px solid #cbd5e1',
               borderRadius: '12px',
             }}
           >
@@ -788,11 +852,11 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 alignItems: 'center',
                 marginBottom: '1rem',
                 paddingBottom: '0.75rem',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                borderBottom: '1px solid #cbd5e1',
               }}
             >
               <div>
-                <h4 style={{ margin: 0, color: '#ffffff', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FolderKanban size={18} color="var(--accent-cyan)" />
                   Project Tasks ({tasks.length} / 5 Max)
                 </h4>
@@ -810,10 +874,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   alignItems: 'center',
                   gap: '0.4rem',
                   padding: '0.45rem 0.85rem',
-                  background: tasks.length >= 5 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 210, 255, 0.15)',
-                  border: '1px solid rgba(0, 210, 255, 0.3)',
+                  background: tasks.length >= 5 ? '#f1f5f9' : '#e0f2fe',
+                  border: '1px solid #7dd3fc',
                   borderRadius: '7px',
-                  color: tasks.length >= 5 ? 'var(--text-dim)' : 'var(--accent-cyan)',
+                  color: tasks.length >= 5 ? '#94a3b8' : '#0284c7',
                   fontWeight: 700,
                   fontSize: '0.78rem',
                   cursor: tasks.length >= 5 ? 'not-allowed' : 'pointer',
@@ -826,7 +890,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             {/* SINGLE MASTER PROJECT KICKOFF TIMELINE SCHEDULE BANNER */}
             {(() => {
               const projectMonthSteps = getProjectMonthSteps(projectMeta.startDate, projectMeta.endDate);
-              const colors = ['#00d2ff', '#a855f7', '#10b981', '#f59e0b', '#ec4899'];
+              const colors = ['#0284c7', '#7e22ce', '#059669', '#d97706', '#db2777'];
               const currentTask = tasks[activeTaskIdx] || tasks[0];
               const currentTaskStartDate = currentTask?.start_date || projectMeta.startDate;
               let activeStepIdx = projectMonthSteps.findIndex((s) => s.dateStr === currentTaskStartDate);
@@ -836,17 +900,17 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 <div
                   style={{
                     padding: '1.15rem',
-                    background: 'linear-gradient(135deg, rgba(14, 23, 38, 0.9) 0%, rgba(9, 13, 22, 0.9) 100%)',
-                    border: '1px solid rgba(0, 210, 255, 0.3)',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
                     borderRadius: '12px',
                     marginBottom: '1.25rem',
-                    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.04)',
                   }}
                 >
                   {/* BANNER HEADER */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div>
-                      <h4 style={{ margin: 0, color: '#ffffff', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h4 style={{ margin: 0, color: '#0f172a', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Calendar size={18} color="var(--accent-cyan)" />
                         Master Project Kickoff Timeline & Schedule
                       </h4>
@@ -869,18 +933,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   <div
                     style={{
                       padding: '0.85rem',
-                      background: 'rgba(5, 11, 20, 0.7)',
+                      background: '#f8fafc',
                       borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      border: '1px solid #cbd5e1',
                       marginBottom: '0.85rem',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.5rem',
                     }}
                   >
-                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${projectMonthSteps.length}, 1fr)`, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.35rem', textAlign: 'center' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${projectMonthSteps.length}, 1fr)`, borderBottom: '1px solid #cbd5e1', paddingBottom: '0.35rem', textAlign: 'center' }}>
                       {projectMonthSteps.map((m) => (
-                        <span key={m.dateStr} style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        <span key={m.dateStr} style={{ fontSize: '0.65rem', fontWeight: 700, color: '#334155' }}>
                           {m.label}
                         </span>
                       ))}
@@ -976,19 +1040,20 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                     key={tItem.id || tIdx}
                     onClick={() => setActiveTaskIdx(tIdx)}
                     style={{
-                      background: 'rgba(10, 16, 30, 0.85)',
-                      border: tIdx === activeTaskIdx ? '1px solid rgba(0, 210, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                      background: '#ffffff',
+                      border: tIdx === activeTaskIdx ? '2px solid #0284c7' : '1px solid #cbd5e1',
                       borderRadius: '12px',
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '1rem',
                       cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                     }}
                   >
                     {/* TASK HEADER */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 800, color: tIdx === activeTaskIdx ? 'var(--accent-cyan)' : '#fff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.88rem', fontWeight: 800, color: tIdx === activeTaskIdx ? '#0284c7' : '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <Wrench size={16} /> Task #{tIdx + 1}: {tItem.task_name} {tIdx === activeTaskIdx && '(Selected on Master Schedule)'}
                       </span>
                       {tasks.length > 1 && (
@@ -1020,7 +1085,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1.1fr 1.1fr 0.9fr', gap: '0.65rem' }}>
                         {/* TASK NAME */}
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                             Task Type *
                           </label>
                           <select
@@ -1029,11 +1094,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                             style={{
                               width: '100%',
                               padding: '0.55rem 0.75rem',
-                              background: 'rgba(15, 23, 42, 0.9)',
-                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
                               borderRadius: '8px',
-                              color: '#fff',
+                              color: '#0f172a',
                               fontSize: '0.85rem',
+                              fontWeight: 600,
                             }}
                           >
                             <option value="Welding">Welding</option>
@@ -1046,7 +1112,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
                         {/* ALLOCATED HOURS */}
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                             Allocated Hours *
                           </label>
                           <input
@@ -1058,10 +1124,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                             style={{
                               width: '100%',
                               padding: '0.55rem 0.75rem',
-                              background: 'rgba(15, 23, 42, 0.9)',
-                              border: '1px solid rgba(0, 210, 255, 0.3)',
+                              background: '#ffffff',
+                              border: '1px solid #0284c7',
                               borderRadius: '8px',
-                              color: 'var(--accent-cyan)',
+                              color: '#0284c7',
                               fontWeight: 800,
                               fontSize: '0.88rem',
                             }}
@@ -1070,7 +1136,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
                         {/* LOCATION */}
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                             Location
                           </label>
                           <select
@@ -1079,11 +1145,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                             style={{
                               width: '100%',
                               padding: '0.55rem 0.75rem',
-                              background: 'rgba(15, 23, 42, 0.9)',
-                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
                               borderRadius: '8px',
-                              color: '#fff',
+                              color: '#0f172a',
                               fontSize: '0.85rem',
+                              fontWeight: 600,
                             }}
                           >
                             <option value="Khordha">Khordha</option>
@@ -1108,7 +1175,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                           return (
                             <>
                               <div>
-                                <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                                   Start Month
                                 </label>
                                 <select
@@ -1124,11 +1191,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                   style={{
                                     width: '100%',
                                     padding: '0.55rem 0.75rem',
-                                    background: 'rgba(15, 23, 42, 0.9)',
-                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    background: '#ffffff',
+                                    border: '1px solid #cbd5e1',
                                     borderRadius: '8px',
-                                    color: '#fff',
+                                    color: '#0f172a',
                                     fontSize: '0.85rem',
+                                    fontWeight: 600,
                                   }}
                                 >
                                   {projectMonthSteps.map((m, idx) => (
@@ -1141,7 +1209,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
                               {/* END MONTH SELECTOR */}
                               <div>
-                                <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                                   End Month
                                 </label>
                                 <select
@@ -1155,11 +1223,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                   style={{
                                     width: '100%',
                                     padding: '0.55rem 0.75rem',
-                                    background: 'rgba(15, 23, 42, 0.9)',
-                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                    background: '#ffffff',
+                                    border: '1px solid #cbd5e1',
                                     borderRadius: '8px',
-                                    color: '#fff',
+                                    color: '#0f172a',
                                     fontSize: '0.85rem',
+                                    fontWeight: 600,
                                   }}
                                 >
                                   {projectMonthSteps.map((m, idx) => (
@@ -1175,16 +1244,16 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
                         {/* DURATION (MONTHS) DISPLAY */}
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.72rem', color: '#334155', fontWeight: 700, marginBottom: '0.3rem' }}>
                             Duration
                           </label>
                           <div
                             style={{
                               padding: '0.55rem 0.75rem',
-                              background: 'rgba(15, 23, 42, 0.9)',
-                              border: '1px solid rgba(0, 210, 255, 0.3)',
+                              background: '#ffffff',
+                              border: '1px solid #0284c7',
                               borderRadius: '8px',
-                              color: 'var(--accent-cyan)',
+                              color: '#0284c7',
                               fontWeight: 800,
                               fontSize: '0.85rem',
                               textAlign: 'center',
@@ -1199,14 +1268,14 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                     <div
                       style={{
                         padding: '1rem',
-                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(0, 210, 255, 0.06) 100%)',
+                        background: '#f8fafc',
                         borderRadius: '10px',
-                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        border: '1px solid #cbd5e1',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <Sliders size={16} color="var(--accent-emerald)" />
-                        <h5 style={{ margin: 0, color: '#ffffff', fontSize: '0.85rem', fontWeight: 800 }}>
+                        <h5 style={{ margin: 0, color: '#0f172a', fontSize: '0.85rem', fontWeight: 800 }}>
                           Task #{tIdx + 1} ({tItem.task_name}) — Progress Adjustments & Buffers
                         </h5>
                       </div>
@@ -1217,9 +1286,9 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                         <div
                           style={{
                             padding: '0.85rem',
-                            background: 'rgba(10, 16, 30, 0.7)',
+                            background: '#ffffff',
                             borderRadius: '8px',
-                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            border: '1px solid #fed7aa',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f59e0b', fontSize: '0.78rem', fontWeight: 800, marginBottom: '0.6rem' }}>
@@ -1237,11 +1306,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                 style={{
                                   width: '100%',
                                   padding: '0.45rem 0.65rem',
-                                  background: 'rgba(15, 23, 42, 0.9)',
-                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  background: '#ffffff',
+                                  border: '1px solid #f97316',
                                   borderRadius: '6px',
-                                  color: '#fff',
+                                  color: '#0f172a',
                                   fontSize: '0.8rem',
+                                  fontWeight: 600,
                                 }}
                               >
                                 <option value="">No Adjustment</option>
@@ -1272,10 +1342,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                 style={{
                                   width: '100%',
                                   padding: '0.45rem 0.65rem',
-                                  background: 'rgba(15, 23, 42, 0.9)',
-                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  background: '#ffffff',
+                                  border: '1px solid #f97316',
                                   borderRadius: '6px',
-                                  color: '#f59e0b',
+                                  color: '#c2410c',
                                   fontSize: '0.82rem',
                                   fontWeight: 700,
                                 }}
@@ -1288,9 +1358,9 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                         <div
                           style={{
                             padding: '0.85rem',
-                            background: 'rgba(10, 16, 30, 0.7)',
+                            background: '#ffffff',
                             borderRadius: '8px',
-                            border: '1px solid rgba(168, 85, 247, 0.3)',
+                            border: '1px solid #e9d5ff',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#a855f7', fontSize: '0.78rem', fontWeight: 800, marginBottom: '0.6rem' }}>
@@ -1308,11 +1378,12 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                 style={{
                                   width: '100%',
                                   padding: '0.45rem 0.65rem',
-                                  background: 'rgba(15, 23, 42, 0.9)',
-                                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                                  background: '#ffffff',
+                                  border: '1px solid #a855f7',
                                   borderRadius: '6px',
-                                  color: '#fff',
+                                  color: '#0f172a',
                                   fontSize: '0.8rem',
+                                  fontWeight: 600,
                                 }}
                               >
                                 <option value="">No Buffer</option>
@@ -1343,10 +1414,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                                 style={{
                                   width: '100%',
                                   padding: '0.45rem 0.65rem',
-                                  background: 'rgba(15, 23, 42, 0.9)',
-                                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                                  background: '#ffffff',
+                                  border: '1px solid #a855f7',
                                   borderRadius: '6px',
-                                  color: '#a855f7',
+                                  color: '#7e22ce',
                                   fontSize: '0.82rem',
                                   fontWeight: 700,
                                 }}
@@ -1362,18 +1433,18 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                     {previewMonths.length > 0 && (
                       <div
                         style={{
-                          background: 'rgba(10, 16, 30, 0.75)',
+                          background: '#f8fafc',
                           borderRadius: '8px',
                           padding: '0.85rem',
-                          border: '1px solid rgba(0, 210, 255, 0.2)',
+                          border: '1px solid #cbd5e1',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                          <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0284c7' }}>
                             Monthly Breakdown Preview ({tItem.task_name} {tItem.task_name === 'Welding' ? '15% Ramp-up Engine' : 'Equal Split Engine'})
                           </div>
                           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            Task Total: <strong style={{ color: '#fff' }}>{previewMonths.reduce((a, b) => a + b.hours, 0).toLocaleString()} hrs</strong>
+                            Task Total: <strong style={{ color: '#0f172a' }}>{previewMonths.reduce((a, b) => a + b.hours, 0).toLocaleString()} hrs</strong>
                           </div>
                         </div>
 
@@ -1384,32 +1455,32 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                               style={{
                                 padding: '0.5rem',
                                 background: m.isAdjusted
-                                  ? 'rgba(245, 158, 11, 0.15)'
+                                  ? '#ffedd5'
                                   : m.isBuffer
-                                  ? 'rgba(168, 85, 247, 0.15)'
+                                  ? '#f3e8ff'
                                   : m.index === 1 && tItem.task_name === 'Welding'
-                                  ? 'rgba(0, 210, 255, 0.12)'
-                                  : 'rgba(255, 255, 255, 0.03)',
+                                  ? '#e0f2fe'
+                                  : '#ffffff',
                                 border: m.isAdjusted
-                                  ? '1px solid #f59e0b'
+                                  ? '1px solid #f97316'
                                   : m.isBuffer
                                   ? '1px solid #a855f7'
                                   : m.index === 1 && tItem.task_name === 'Welding'
-                                  ? '1px solid var(--accent-cyan)'
-                                  : '1px solid rgba(255, 255, 255, 0.08)',
+                                  ? '1px solid #0284c7'
+                                  : '1px solid #cbd5e1',
                                 borderRadius: '6px',
                                 textAlign: 'center',
                               }}
                             >
-                              <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                              <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700 }}>
                                 M{m.index}: {m.month}
                               </div>
 
-                              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: m.isAdjusted ? '#f59e0b' : m.isBuffer ? '#a855f7' : m.index === 1 && tItem.task_name === 'Welding' ? 'var(--accent-cyan)' : '#fff', marginTop: '0.1rem' }}>
+                              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: m.isAdjusted ? '#c2410c' : m.isBuffer ? '#7e22ce' : m.index === 1 && tItem.task_name === 'Welding' ? '#0284c7' : '#0f172a', marginTop: '0.1rem' }}>
                                 {m.hours.toLocaleString()} hrs
                               </div>
 
-                              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: m.isAdjusted ? '#f59e0b' : m.isBuffer ? '#a855f7' : m.index === 1 && tItem.task_name === 'Welding' ? '#00d2ff' : '#10b981' }}>
+                              <div style={{ fontSize: '0.65rem', fontWeight: 700, color: m.isAdjusted ? '#c2410c' : m.isBuffer ? '#7e22ce' : m.index === 1 && tItem.task_name === 'Welding' ? '#0284c7' : '#059669' }}>
                                 {m.isAdjusted ? '(Adjusted)' : m.isBuffer ? '(Buffer Added)' : (m.index === 1 && tItem.task_name === 'Welding' ? '(15% Ramp-up)' : '(Equal Split)')}
                               </div>
                             </div>
@@ -1432,9 +1503,9 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           )}
 
           {/* ACTIONS & TOTAL HOURS SUMMARY */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Total Project Planned Capacity: <strong style={{ color: 'var(--accent-cyan)', fontSize: '1rem' }}>{totalProjectPlannedHours.toLocaleString()} hrs</strong> ({tasks.length} {tasks.length === 1 ? 'task' : 'tasks'})
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid #cbd5e1' }}>
+            <div style={{ fontSize: '0.85rem', color: '#334155', fontWeight: 600 }}>
+              Total Project Planned Capacity: <strong style={{ color: '#0284c7', fontSize: '1rem' }}>{totalProjectPlannedHours.toLocaleString()} hrs</strong> ({tasks.length} {tasks.length === 1 ? 'task' : 'tasks'})
             </div>
 
             <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -1443,10 +1514,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 onClick={onClose}
                 style={{
                   padding: '0.65rem 1.2rem',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#334155',
                   fontWeight: 700,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
@@ -1460,16 +1531,17 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 disabled={isSaving}
                 style={{
                   padding: '0.65rem 1.4rem',
-                  background: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
                   border: 'none',
                   borderRadius: '8px',
-                  color: '#050b14',
+                  color: '#ffffff',
                   fontWeight: 800,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
+                  boxShadow: '0 2px 10px rgba(2, 132, 199, 0.3)',
                 }}
               >
                 <Save size={16} /> {isSaving ? 'Saving Edits...' : 'Save & Recalculate Project'}

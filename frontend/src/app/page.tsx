@@ -263,7 +263,7 @@ export default function Home() {
       <main className="main-content">
         <header className="top-header">
           <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <SmsGroupLogo height={32} textColor="#ffffff" />
+            <SmsGroupLogo height={38} textColor="#0f172a" />
             <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '1.25rem' }}>
               <h2>SMS Capacity Planning Platform</h2>
               <p>SMS Group Enterprise Plant — 12 Month Capacity Horizon</p>
