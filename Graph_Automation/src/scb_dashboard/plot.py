@@ -7,16 +7,16 @@ from matplotlib.lines import Line2D
 def plot_dashboard(df):
 
     # ==========================================
-    # Dashboard Canvas
+    # Dashboard Canvas (Spacious & Clean Layout)
     # ==========================================
-    fig = plt.figure(figsize=(16, 9), facecolor="white")
+    fig = plt.figure(figsize=(16, 10.5), facecolor="white")
 
     # Main chart area
     ax = fig.add_axes([
         0.06,   # left
-        0.17,   # bottom
-        0.72,   # width
-        0.68    # height
+        0.25,   # bottom
+        0.73,   # width
+        0.55    # height
     ])
 
     # ==========================================
@@ -24,13 +24,11 @@ def plot_dashboard(df):
     # ==========================================
 
     months = df["Month"]
-
     capacity = df["Capacity"]
 
-
     # ==========================================
-# COLORS
-# ==========================================
+    # COLORS
+    # ==========================================
 
     colors = {
         "Welding": "#103B5C",
@@ -38,102 +36,51 @@ def plot_dashboard(df):
         "Assembly": "#36A8C7",
         "Roll Refurbishment": "#7FD6EA",
         "Plating": "#CFEFFA",
-        
-
     }
 
     stack_order = [
-    "Welding",
-    "Machining",
-    "Assembly",
-    "Roll Refurbishment",
-    "Plating",
+        "Welding",
+        "Machining",
+        "Assembly",
+        "Roll Refurbishment",
+        "Plating",
     ]
 
     bottom = np.zeros(len(df))
-    # ==========================================
-# AVAILABLE CAPACITY AREA
-# ==========================================
 
-    x = np.arange(len(months))
-
-    ax.fill_between(
-        x,
-        0,
-        capacity,
-        color="#DDEFD2",
-        alpha=0.65,
-        zorder=0,
-        label="Available Capacity",
-    )
     if "NPK Capacity" in df.columns:
-        npk_capacity = df["NPK Capacity"]
+        npk_capacity = df["NPK Capacity"].values
     else:
-        npk_capacity = capacity
+        npk_capacity = capacity.values
 
-
-       # ==========================================================
-    # CAPACITY UTILIZATION (%)
-    # ==========================================================
-    
     planned_hours = (
-                df["Welding"]
-                + df["Machining"]
-                + df["Assembly"]
-                + df["Roll Refurbishment"]
-                + df["Plating"]
-            )
-        
-    utilization = (
-                planned_hours / npk_capacity * 100
-            ).round(0)
-        
-            # ==========================================================
-        # CAPACITY UTILIZATION BOXES
-        # ==========================================================
-        
-    y_box = max(capacity) + 5000
-        
-    # for xpos, util in zip(x, utilization):
+        df["Welding"]
+        + df["Machining"]
+        + df["Assembly"]
+        + df["Roll Refurbishment"]
+        + df["Plating"]
+    ).values
 
-    #     util = float(util)
+    if "Planned Hours" in df.columns and df["Planned Hours"].sum() > 0:
+        planned_hours = df["Planned Hours"].values
 
-    #     if util >= 100:
-    #         color = "#8BC34A"
-    #     elif util >= 75:
-    #         color = "#F6C244"
-    #     else:
-    #         color = "#EF5350"
-
-    #     # Don't display the percentage text
-    #     label = ""
-
-    #     ax.text(
-    #         xpos,
-    #         y_box,
-    #         label,
-    #         ha="center",
-    #         va="center",
-    #         fontsize=9,
-    #         fontweight="bold",
-    #         color="black",
-    #         bbox=dict(
-    #             facecolor=color,
-    #             edgecolor="gray",
-    #             boxstyle="round,pad=0.25",
-    #         ),
-    #         zorder=30,
-    #     )
-
-        
+    utilization = np.zeros(len(months))
+    for idx_u in range(len(months)):
+        if "Utilization" in df.columns and float(df["Utilization"].iloc[idx_u]) > 0:
+            u_raw = float(df["Utilization"].iloc[idx_u])
+            utilization[idx_u] = u_raw * 100.0 if u_raw <= 1.0 else u_raw
+        elif npk_capacity[idx_u] > 0:
+            utilization[idx_u] = (planned_hours[idx_u] / npk_capacity[idx_u]) * 100.0
+        else:
+            utilization[idx_u] = 0.0
 
     # ==========================================
-    # Title
+    # Title & Header Text
     # ==========================================
 
     fig.text(
         0.06,
-        0.955,
+        0.965,
         "Production Bhubaneswar",
         fontsize=18,
         fontweight="bold",
@@ -143,14 +90,98 @@ def plot_dashboard(df):
 
     fig.text(
         0.36,
-        0.955,
+        0.965,
         " - Capacity Utilization",
         fontsize=18,
         color="#1D6FB8",
         fontweight="bold",
-        
         va="top",
     )
+
+    first_m = str(months.iloc[0]).strip() if hasattr(months, 'iloc') else str(months[0])
+    last_m = str(months.iloc[-1]).strip() if hasattr(months, 'iloc') else str(months[-1])
+    fig.text(
+        0.78,
+        0.965,
+        f"Planned Hours {first_m.upper()}-{last_m.upper()}",
+        fontsize=9,
+        fontweight="bold",
+        ha="right",
+        va="top",
+        color="#333333",
+    )
+
+    # ==========================================================
+    # TOP UTILIZATION & CAPACITY HEADER BANNER (TABLE STYLE)
+    # ==========================================================
+
+    table_ax = fig.add_axes([0.01, 0.825, 0.77, 0.115])
+    table_ax.axis("off")
+    table_ax.set_xlim(-1.8, len(months) - 0.4)
+    table_ax.set_ylim(0, 3)
+
+    # Row 2 Header Box (% Of Utilization)
+    rect_u_hdr = patches.Rectangle((-1.75, 2.04), 1.20, 0.88, facecolor="#6B9E43", edgecolor="none", zorder=5)
+    table_ax.add_patch(rect_u_hdr)
+    table_ax.text(-1.15, 2.48, "% Of Utilization", ha="center", va="center", fontsize=8, fontweight="bold", color="white", zorder=10)
+
+    # Row 1 Header Box (Total NPK)
+    rect_n_hdr = patches.Rectangle((-1.75, 1.04), 1.20, 0.88, facecolor="#555555", edgecolor="none", zorder=5)
+    table_ax.add_patch(rect_n_hdr)
+    table_ax.text(-1.15, 1.48, "Total NPK", ha="center", va="center", fontsize=8, fontweight="bold", color="white", zorder=10)
+
+    # Row 0 Header Box (Planned Hours)
+    rect_p_hdr = patches.Rectangle((-1.75, 0.04), 1.20, 0.88, facecolor="#777777", edgecolor="none", zorder=5)
+    table_ax.add_patch(rect_p_hdr)
+    table_ax.text(-1.15, 0.48, "Planned Hours", ha="center", va="center", fontsize=8, fontweight="bold", color="white", zorder=10)
+
+    # Detect if data values are in raw hours (>100) or thousands (<=100) for uniform table formatting
+    max_raw = max(max(npk_capacity if len(npk_capacity) else [0]), max(planned_hours if len(planned_hours) else [0]))
+    is_raw_scale = max_raw > 100
+
+    # Fill 12 Month Column Data Cells
+    for i in range(len(months)):
+        u_val = utilization[i]
+        if u_val >= 75.0:
+            bg_col = "#9CD968"  # Green (>75%)
+            border_col = "#558B2F"
+        elif u_val >= 50.0:
+            bg_col = "#FFD54F"  # Yellow (50-75%)
+            border_col = "#F57F17"
+        else:
+            bg_col = "#EF5350"  # Red (<50%)
+            border_col = "#D32F2F"
+
+        # Row 2: Utilization % Box
+        cell_u = patches.Rectangle((i - 0.44, 2.04), 0.88, 0.88, facecolor=bg_col, edgecolor=border_col, linewidth=0.6, zorder=5)
+        table_ax.add_patch(cell_u)
+        table_ax.text(i, 2.48, f"{int(round(u_val))}%", ha="center", va="center", fontsize=8.5, fontweight="bold", color="black", zorder=10)
+
+        # Row 1: Total NPK Box (Formatted cleanly in 1000s)
+        npk_raw = float(npk_capacity[i])
+        npk_k = (npk_raw / 1000.0) if is_raw_scale else npk_raw
+        if npk_k >= 10:
+            npk_str = f"{int(round(npk_k))}"
+        elif npk_k > 0:
+            npk_str = f"{npk_k:.1f}"
+        else:
+            npk_str = "0"
+        cell_n = patches.Rectangle((i - 0.44, 1.04), 0.88, 0.88, facecolor="#F4F4F4", edgecolor="#D0D0D0", linewidth=0.6, zorder=5)
+        table_ax.add_patch(cell_n)
+        table_ax.text(i, 1.48, npk_str, ha="center", va="center", fontsize=8.5, fontweight="bold", color="black", zorder=10)
+
+        # Row 0: Planned Hours Box (Formatted cleanly in 1000s)
+        pln_raw = float(planned_hours[i])
+        pln_k = (pln_raw / 1000.0) if is_raw_scale else pln_raw
+        if pln_k >= 10:
+            pln_str = f"{int(round(pln_k))}"
+        elif pln_k > 0:
+            pln_str = f"{pln_k:.1f}"
+        else:
+            pln_str = "0"
+        cell_p = patches.Rectangle((i - 0.44, 0.04), 0.88, 0.88, facecolor="#F4F4F4", edgecolor="#D0D0D0", linewidth=0.6, zorder=5)
+        table_ax.add_patch(cell_p)
+        table_ax.text(i, 0.48, pln_str, ha="center", va="center", fontsize=8.5, fontweight="bold", color="black", zorder=10)
 
     # ==========================================
     # Axis (Smart Dynamic Y-Axis Scaling)
@@ -179,7 +210,6 @@ def plot_dashboard(df):
         step = 10000
 
     ax.set_ylim(0, ymax)
-
     ax.set_xlim(-0.6, len(months) - 0.4)
 
     x = np.arange(len(months))
@@ -188,9 +218,7 @@ def plot_dashboard(df):
     ax.set_xticklabels([])
 
     ticks = np.arange(0, ymax + 1, step)
-
     ax.set_yticks(ticks)
-
     ax.set_yticklabels(
         [f"{int(t/1000)}" for t in ticks],
         fontsize=9,
@@ -212,7 +240,6 @@ def plot_dashboard(df):
         linestyle="--",
         linewidth=0.8,
     )
-
     ax.set_axisbelow(True)
 
     # ==========================================
@@ -221,16 +248,12 @@ def plot_dashboard(df):
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-
     ax.spines["left"].set_color("#999999")
     ax.spines["bottom"].set_color("#999999")
-
 
     # ==========================================
     # GREY NPK CAPACITY BACKGROUND
     # ==========================================
-
-    x = np.arange(len(months))
 
     ax.bar(
         x,
@@ -250,7 +273,6 @@ def plot_dashboard(df):
     # ==========================================
 
     for column in stack_order:
-
         bars = ax.bar(
             x,
             df[column],
@@ -263,29 +285,21 @@ def plot_dashboard(df):
             label=column,
         )
 
-        # ----------------------------------------
-        # Display value inside each stack segment
-        # ----------------------------------------
-
         for bar, value in zip(bars, df[column]):
-
-            # Skip tiny segments (< 500 hrs)
-            if value < 500:
+            # Hide labels for tiny segments (< 300 hrs or < 0.3k) to avoid segment crowding
+            val_in_k = (value / 1000.0) if is_raw_scale else value
+            if val_in_k < 0.3:
                 continue
 
             x_text = bar.get_x() + bar.get_width() / 2
             y_text = bar.get_y() + bar.get_height() / 2
 
-            # White text on dark colors
-            if column in ["Welding", "Machining", "Assembly"]:
-                txt_color = "white"
-            else:
-                txt_color = "black"
+            txt_color = "white" if column in ["Welding", "Machining", "Assembly"] else "black"
 
             ax.text(
                 x_text,
                 y_text,
-                f"{value/1000:.1f}",
+                f"{val_in_k:.1f}",
                 ha="center",
                 va="center",
                 fontsize=7,
@@ -300,17 +314,18 @@ def plot_dashboard(df):
     # TOTAL PLANNED HOURS ABOVE EACH STACK
     # ==========================================================
 
-    offset = ymax * 0.02
+    offset = ymax * 0.025
 
     for i, total in enumerate(bottom):
         if total > 0:
+            tot_in_k = (total / 1000.0) if is_raw_scale else total
             ax.text(
                 i,
-                total + offset,          # Dynamic offset relative to Y-axis max
-                f"{total/1000:.1f}",
+                total + offset,
+                f"{tot_in_k:.1f}",
                 ha="center",
                 va="bottom",
-                fontsize=9,
+                fontsize=8.5,
                 fontweight="bold",
                 color="black",
                 zorder=15,
@@ -334,19 +349,19 @@ def plot_dashboard(df):
         label="Available Capacity",
     )
 
-    # -------------------------------------------------------
+    # ==========================================================
     # GROUP COMPANY LINE (Conditionally plot if data exists)
-    # -------------------------------------------------------
+    # ==========================================================
     has_group = "Group Company" in df.columns and df["Group Company"].sum() > 0
     if has_group:
         group_company = df["Group Company"]
-        if group_company.max() < 100:  # If passed in 1000s, convert to raw hours for plotting
+        if group_company.max() < 100 and is_raw_scale:
             group_company = group_company * 1000
 
         ax.plot(
             months,
             group_company,
-            color="#2F80ED",        # Blue
+            color="#2F80ED",
             marker="o",
             linewidth=2.5,
             markersize=6,
@@ -356,10 +371,11 @@ def plot_dashboard(df):
 
         for xpos, value in zip(x, group_company):
             if value > 0:
+                val_k = (value / 1000.0) if is_raw_scale else value
                 ax.text(
                     xpos,
                     value + offset,
-                    f"{value/1000:.1f}",
+                    f"{val_k:.1f}",
                     fontsize=7,
                     ha="center",
                     color="#1E88E5",
@@ -374,7 +390,7 @@ def plot_dashboard(df):
     has_contract = "Contract MFG" in df.columns and df["Contract MFG"].sum() > 0
     if has_contract:
         contract = df["Contract MFG"]
-        if contract.max() < 100:  # If passed in 1000s, convert to raw hours for plotting
+        if contract.max() < 100 and is_raw_scale:
             contract = contract * 1000
 
         ax.plot(
@@ -392,10 +408,11 @@ def plot_dashboard(df):
 
         for xpos, value in zip(x, contract):
             if value > 0:
+                val_k = (value / 1000.0) if is_raw_scale else value
                 ax.text(
                     xpos,
                     value + offset,
-                    f"{value/1000:.1f}",
+                    f"{val_k:.1f}",
                     fontsize=7,
                     ha="center",
                     color="#F28C28",
@@ -408,10 +425,11 @@ def plot_dashboard(df):
 
     for xpos, value in zip(x, capacity):
         if value > 0:
+            val_k = (value / 1000.0) if is_raw_scale else value
             ax.text(
                 xpos,
                 value + offset,
-                f"{value/1000:.1f}",
+                f"{val_k:.1f}",
                 ha="center",
                 va="bottom",
                 fontsize=8,
@@ -424,13 +442,11 @@ def plot_dashboard(df):
     # BOTTOM MONTH STRIP
     # ==========================================================
 
-    month_ax = fig.add_axes([0.06, 0.08, 0.72, 0.055])
+    month_ax = fig.add_axes([0.06, 0.17, 0.73, 0.05])
 
     month_ax.set_xlim(-0.5, len(months) - 0.5)
     month_ax.set_ylim(0, 1)
-
     month_ax.set_facecolor("#EFEFEF")
-
     month_ax.set_xticks([])
     month_ax.set_yticks([])
 
@@ -439,7 +455,6 @@ def plot_dashboard(df):
         spine.set_linewidth(0.8)
 
     for i, month in enumerate(months):
-
         month_ax.text(
             i,
             0.5,
@@ -452,7 +467,6 @@ def plot_dashboard(df):
         )
 
     for i in range(len(months) + 1):
-
         month_ax.plot(
             [i - 0.5, i - 0.5],
             [0, 1],
@@ -461,13 +475,65 @@ def plot_dashboard(df):
         )
 
     # ==========================================================
+    # DEPARTMENT & LINE LEGEND (DEDICATED UNCLUTTERED AXES)
+    # ==========================================================
+
+    legend_ax = fig.add_axes([0.06, 0.09, 0.73, 0.055])
+    legend_ax.axis("off")
+
+    legend_handles = [
+        patches.Patch(facecolor="#103B5C", edgecolor="white", label="Welding"),
+        patches.Patch(facecolor="#1C7893", edgecolor="white", label="Machining"),
+        patches.Patch(facecolor="#36A8C7", edgecolor="white", label="Assembly"),
+        patches.Patch(facecolor="#7FD6EA", edgecolor="white", label="Roll Refurbishment"),
+        patches.Patch(facecolor="#CFEFFA", edgecolor="white", label="Plating"),
+        patches.Patch(facecolor="#ECECEC", edgecolor="#808080", hatch="//", label="NPK Capacity"),
+        Line2D([0], [0], color="black", marker="o", linewidth=2.5, markersize=6, label="Available Capacity"),
+    ]
+
+    if has_group:
+        legend_handles.append(Line2D([0], [0], color="#2F80ED", marker="o", linewidth=2.5, markersize=6, label="Group Company"))
+
+    if has_contract:
+        legend_handles.append(Line2D([0], [0], color="#F28E2B", marker="o", linewidth=2.5, markersize=6, label="Contract MFG"))
+
+    legend_ax.legend(
+        handles=legend_handles,
+        loc="center",
+        ncol=4 if not (has_group or has_contract) else 5,
+        fontsize=9,
+        frameon=False,
+    )
+
+    # ==========================================================
+    # UTILIZATION LEGEND PILLS (BOTTOM LEFT SEPARATE AXES)
+    # ==========================================================
+
+    util_ax = fig.add_axes([0.06, 0.035, 0.45, 0.04])
+    util_ax.axis("off")
+
+    # Green Pill (>75%)
+    p1 = patches.FancyBboxPatch((0.02, 0.2), 0.08, 0.6, boxstyle="round,pad=0.05", facecolor="#9CD968", edgecolor="none")
+    util_ax.add_patch(p1)
+    util_ax.text(0.12, 0.5, "more than 75% utilized", va="center", fontsize=8, fontweight="bold", color="#333333")
+
+    # Yellow Pill (50-75%)
+    p2 = patches.FancyBboxPatch((0.42, 0.2), 0.08, 0.6, boxstyle="round,pad=0.05", facecolor="#FFD54F", edgecolor="none")
+    util_ax.add_patch(p2)
+    util_ax.text(0.52, 0.5, "50%-75% utilized", va="center", fontsize=8, fontweight="bold", color="#333333")
+
+    # Red Pill (<50%)
+    p3 = patches.FancyBboxPatch((0.75, 0.2), 0.08, 0.6, boxstyle="round,pad=0.05", facecolor="#EF5350", edgecolor="none")
+    util_ax.add_patch(p3)
+    util_ax.text(0.85, 0.5, "Less than 50% utilized", va="center", fontsize=8, fontweight="bold", color="#333333")
+
+    # ==========================================================
     # RIGHT SIDE SUMMARY PANEL
     # ==========================================================
 
-    summary_ax = fig.add_axes([0.80, 0.22, 0.18, 0.55])
+    summary_ax = fig.add_axes([0.805, 0.25, 0.175, 0.55])
     summary_ax.axis("off")
 
-    # Background
     summary_ax.add_patch(
         patches.FancyBboxPatch(
             (0, 0),
@@ -479,13 +545,13 @@ def plot_dashboard(df):
         )
     )
 
-    planned = df["Planned Hours"].mean() / 1000
-    capacity_total = df["Capacity"].mean() / 1000
+    planned = df["Planned Hours"].mean() / 1000.0 if is_raw_scale else df["Planned Hours"].mean()
+    capacity_total = df["Capacity"].mean() / 1000.0 if is_raw_scale else df["Capacity"].mean()
     util_avg = df["Utilization"].mean()
 
     summary_ax.text(
         0.5,
-        0.95,
+        0.92,
         "SUMMARY",
         ha="center",
         fontsize=13,
@@ -500,20 +566,19 @@ def plot_dashboard(df):
 
     if has_group:
         grp_val = df["Group Company"].mean()
-        if grp_val > 100:
-            grp_val /= 1000
+        if grp_val > 100 and is_raw_scale:
+            grp_val /= 1000.0
         rows.append(("Group Company", grp_val))
 
     if has_contract:
         cnt_val = df["Contract MFG"].mean()
-        if cnt_val > 100:
-            cnt_val /= 1000
+        if cnt_val > 100 and is_raw_scale:
+            cnt_val /= 1000.0
         rows.append(("Contract MFG", cnt_val))
 
-    y = 0.82
+    y = 0.78
 
     for label, value in rows:
-
         if "Utilization" in label:
             txt = f"{value:.1f}%"
         else:
@@ -537,116 +602,27 @@ def plot_dashboard(df):
 
         y -= 0.16
 
+    # ==========================================================
+    # FOOTER BRANDING
+    # ==========================================================
+
+    fig.text(0.96, 0.035, "SMS group", fontsize=14, fontweight="bold", color="#003366", ha="right")
+    fig.text(0.68, 0.015, "© SMS group GmbH", fontsize=7.5, color="#666666")
+    fig.text(0.96, 0.015, "August 19, 2026", fontsize=7.5, color="#666666", ha="right")
 
     # ==========================================================
-    # LEGEND
+    # OUTER BORDER
     # ==========================================================
-
-    legend_handles = [
-
-        patches.Patch(
-            facecolor="#103B5C",
-            edgecolor="white",
-            label="Welding"
-        ),
-
-        patches.Patch(
-            facecolor="#1C7893",
-            edgecolor="white",
-            label="Machining"
-        ),
-
-        patches.Patch(
-            facecolor="#36A8C7",
-            edgecolor="white",
-            label="Assembly"
-        ),
-
-        patches.Patch(
-            facecolor="#7FD6EA",
-            edgecolor="white",
-            label="Roll Refurbishment"
-        ),
-
-        patches.Patch(
-            facecolor="#CFEFFA",
-            edgecolor="white",
-            label="Plating"
-        ),
-
-        patches.Patch(
-            facecolor="#ECECEC",
-            edgecolor="#808080",
-            hatch="//",
-            label="NPK Capacity"
-        ),
-
-        Line2D(
-            [0],
-            [0],
-            color="black",
-            marker="o",
-            linewidth=2.5,
-            markersize=6,
-            label="Available Capacity"
-        ),
-    ]
-
-    if has_group:
-        legend_handles.append(
-            Line2D(
-                [0],
-                [0],
-                color="#2F80ED",
-                marker="o",
-                linewidth=2.5,
-                markersize=6,
-                label="Group Company"
-            )
-        )
-
-    if has_contract:
-        legend_handles.append(
-            Line2D(
-                [0],
-                [0],
-                color="#F28E2B",
-                marker="o",
-                linewidth=2.5,
-                markersize=6,
-                label="Contract MFG"
-            )
-        )
-
-    ax.legend(
-        handles=legend_handles,
-        loc="upper center",
-        bbox_to_anchor=(0.5, -0.13),
-        ncol=4 if not (has_group or has_contract) else 5,
-        fontsize=9,
-        frameon=False,
-    )
-
-    # ==========================================================
-# OUTER BORDER
-# ==========================================================
 
     fig.add_artist(
-
         patches.Rectangle(
-
             (0.01, 0.01),
             0.98,
             0.98,
-
             transform=fig.transFigure,
-
             fill=False,
-
             edgecolor="#A8A8A8",
-
             linewidth=1.2,
-
         )
     )
 

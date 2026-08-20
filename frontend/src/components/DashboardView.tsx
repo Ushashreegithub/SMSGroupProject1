@@ -139,13 +139,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ version }) => {
 
           if (!imageErrors[selectedDept]) {
             return (
-              <div style={{ marginTop: '1.5rem', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <div style={{ marginTop: '1rem', width: '100%', overflow: 'hidden', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)' }}>
                 <img 
                   key={`${selectedDept}-${version?.upload_date || ''}`}
                   src={fullImgSrc} 
                   alt={`${selectedDept} Generated Dashboard Chart`} 
                   onError={() => setImageErrors(prev => ({ ...prev, [selectedDept]: true }))}
-                  style={{ width: '100%', maxHeight: '520px', objectFit: 'contain', borderRadius: '8px' }} 
+                  style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '780px', objectFit: 'contain' }} 
                 />
               </div>
             );

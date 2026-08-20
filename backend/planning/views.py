@@ -6,9 +6,9 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from .models import PlanningVersion, Benchmark, ManualInputConfig, Project, ProjectTask, ProjectTaskMonthlyDistribution
+from .models import PlanningVersion, Benchmark, ManualInputConfig, CapacityPlan, Project, ProjectTask, ProjectTaskMonthlyDistribution
 from .serializers import (
-    PlanningVersionSerializer, BenchmarkSerializer, ProjectSerializer,
+    PlanningVersionSerializer, BenchmarkSerializer, CapacityPlanSerializer, ProjectSerializer,
     ProjectTaskSerializer, ProjectTaskMonthlyDistributionSerializer,
     WeldingCalculationPreviewSerializer
 )
@@ -500,24 +500,154 @@ class PlanningVersionViewSet(viewsets.ModelViewSet):
             "tasks": config.tasks
         }, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'])
+    def list_capacity_plans(self, request):
+        plans = CapacityPlan.objects.all()
+        if not plans.exists():
+            default_tasks = [
+                { "id": "welding", "name": "Welding", "category": "Heavy Fabrication", "hours": 50000 },
+                { "id": "machining", "name": "Machining", "category": "Precision Turning & Milling", "hours": 30000 },
+                { "id": "assembly", "name": "Assembly", "category": "Plant Equipment Assembly", "hours": 20000 },
+                { "id": "rr", "name": "Roll Repair (R&R)", "category": "Refurbishment & Reconditioning", "hours": 25000 },
+                { "id": "plating", "name": "Plating", "category": "Surface Treatment & Chrome", "hours": 15000 }
+            ]
+            total_h = sum(float(t.get("hours", 0)) for t in default_tasks)
+            CapacityPlan.objects.create(
+                plan_id="plan_2026_baseline",
+                name="2026 Baseline Plan (140,000 hrs)",
+                year=2026,
+                horizon="Aug 2026 - Jul 2027",
+                tasks=default_tasks,
+                total_hours=total_h,
+                is_active=True
+            )
+            plans = CapacityPlan.objects.all()
+
+        active_plan = plans.filter(is_active=True).first() or plans.first()
+        serializer = CapacityPlanSerializer(plans, many=True)
+        return Response({
+            "status": "success",
+            "active_plan_id": active_plan.plan_id if active_plan else None,
+            "plans": serializer.data
+        }, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['post'])
-    def save_manual_config(self, request):
+    def save_capacity_plan(self, request):
+        plan_id = request.data.get('plan_id')
+        name = request.data.get('name', '').strip()
         year = int(request.data.get('year', 2026))
         tasks = request.data.get('tasks', [])
+        is_new = request.data.get('is_new', False)
+
+        total_hours = sum(float(t.get("hours", 0)) for t in tasks)
+
+        if is_new or not plan_id:
+            import uuid
+            new_id = f"plan_{year}_{uuid.uuid4().hex[:6]}"
+            CapacityPlan.objects.update(is_active=False)
+            plan = CapacityPlan.objects.create(
+                plan_id=new_id,
+                name=name or f"Capacity Plan {year} ({int(total_hours):,} hrs)",
+                year=year,
+                horizon=f"Aug {year} - Jul {year+1}",
+                tasks=tasks,
+                total_hours=total_hours,
+                is_active=True
+            )
+        else:
+            try:
+                plan = CapacityPlan.objects.get(plan_id=plan_id)
+                if name:
+                    plan.name = name
+                plan.year = year
+                plan.horizon = f"Aug {year} - Jul {year+1}"
+                plan.tasks = tasks
+                plan.total_hours = total_hours
+                plan.is_active = True
+                CapacityPlan.objects.exclude(plan_id=plan.plan_id).update(is_active=False)
+                plan.save()
+            except CapacityPlan.DoesNotExist:
+                import uuid
+                new_id = f"plan_{year}_{uuid.uuid4().hex[:6]}"
+                CapacityPlan.objects.update(is_active=False)
+                plan = CapacityPlan.objects.create(
+                    plan_id=new_id,
+                    name=name or f"Capacity Plan {year} ({int(total_hours):,} hrs)",
+                    year=year,
+                    horizon=f"Aug {year} - Jul {year+1}",
+                    tasks=tasks,
+                    total_hours=total_hours,
+                    is_active=True
+                )
+
         config, _ = ManualInputConfig.objects.get_or_create(user_key="default_user")
         config.year = year
         config.tasks = tasks
         config.save()
 
-        # Regenerate live graph automation charts based on updated manual capacity inputs
         sync_graph_automation_charts(force=True)
 
         return Response({
             "status": "success",
-            "message": "Manual capacity configuration saved successfully.",
-            "year": config.year,
-            "tasks": config.tasks
+            "message": f"Capacity plan '{plan.name}' saved and activated successfully.",
+            "plan": CapacityPlanSerializer(plan).data
         }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def activate_capacity_plan(self, request):
+        plan_id = request.data.get('plan_id')
+        if not plan_id:
+            return Response({"error": "plan_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            plan = CapacityPlan.objects.get(plan_id=plan_id)
+            CapacityPlan.objects.update(is_active=False)
+            plan.is_active = True
+            plan.save()
+
+            config, _ = ManualInputConfig.objects.get_or_create(user_key="default_user")
+            config.year = plan.year
+            config.tasks = plan.tasks
+            config.save()
+
+            sync_graph_automation_charts(force=True)
+
+            return Response({
+                "status": "success",
+                "message": f"Capacity plan '{plan.name}' activated.",
+                "plan": CapacityPlanSerializer(plan).data
+            }, status=status.HTTP_200_OK)
+        except CapacityPlan.DoesNotExist:
+            return Response({"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'])
+    def delete_capacity_plan(self, request):
+        plan_id = request.data.get('plan_id')
+        if not plan_id:
+            return Response({"error": "plan_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            plan = CapacityPlan.objects.get(plan_id=plan_id)
+            was_active = plan.is_active
+            plan.delete()
+
+            if was_active:
+                remaining = CapacityPlan.objects.first()
+                if remaining:
+                    remaining.is_active = True
+                    remaining.save()
+                    config, _ = ManualInputConfig.objects.get_or_create(user_key="default_user")
+                    config.year = remaining.year
+                    config.tasks = remaining.tasks
+                    config.save()
+                    sync_graph_automation_charts(force=True)
+
+            return Response({
+                "status": "success",
+                "message": "Capacity plan deleted successfully."
+            }, status=status.HTTP_200_OK)
+        except CapacityPlan.DoesNotExist:
+            return Response({"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class BenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
