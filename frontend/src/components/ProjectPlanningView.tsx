@@ -31,9 +31,11 @@ interface Project {
   projectNumber: string;
   equipmentName: string;
   equipmentWeight: string;
+  fabricationWeight?: string;
   description: string;
   startDate: string;
   endDate: string;
+  edd?: string;
   projectManager: string;
   task: string;
   location: string;
@@ -179,9 +181,11 @@ export const ProjectPlanningView: React.FC<
     projectNumber: '',
     equipmentName: '',
     equipmentWeight: '',
+    fabricationWeight: '',
     description: '',
     startDate: '',
     endDate: '',
+    edd: '',
     projectManager: '',
     priority: 'Medium',
     status: 'Planned',
@@ -341,9 +345,12 @@ export const ProjectPlanningView: React.FC<
             project_number: bp.project_number || wbs,
             equipmentName: bp.equipment_name || '',
             equipmentWeight: bp.equipment_weight || '',
+            fabricationWeight: bp.fabrication_weight || '',
+            fabrication_weight: bp.fabrication_weight || '',
             description: bp.description || '',
             startDate: bp.zero_date || bp.startDate || '',
             endDate: bp.cdd || bp.endDate || '',
+            edd: bp.edd || bp.edd_date || '',
             projectManager: bp.project_manager || '',
             task: mainTask.task_name || 'Welding',
             plannedHours: Number(bp.total_planned_hours) || 0,
@@ -596,9 +603,11 @@ export const ProjectPlanningView: React.FC<
       projectNumber: '',
       equipmentName: '',
       equipmentWeight: '',
+      fabricationWeight: '',
       description: '',
       startDate: '',
       endDate: '',
+      edd: '',
       projectManager: '',
       priority: 'Medium',
       status: 'Planned',
@@ -917,6 +926,12 @@ export const ProjectPlanningView: React.FC<
       equipmentWeight:
         formData.equipmentWeight,
 
+      fabricationWeight:
+        formData.fabricationWeight,
+
+      fabrication_weight:
+        formData.fabricationWeight,
+
       description:
         formData.description,
 
@@ -925,6 +940,12 @@ export const ProjectPlanningView: React.FC<
 
       endDate:
         formData.endDate,
+
+      edd:
+        formData.edd,
+
+      edd_date:
+        formData.edd,
 
       projectManager:
         formData.projectManager,
@@ -1382,13 +1403,13 @@ export const ProjectPlanningView: React.FC<
               </div>
             </div>
 
-            {/* ROW 3 - EQUIPMENT NAME & EQUIPMENT WEIGHT */}
+            {/* ROW 3 - EQUIPMENT NAME, EQUIPMENT WEIGHT & FABRICATION WEIGHT */}
 
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns:
-                  '1fr 1fr',
+                  '1fr 1fr 1fr',
                 gap: '1rem',
                 marginBottom:
                   '1rem',
@@ -1421,8 +1442,7 @@ export const ProjectPlanningView: React.FC<
               <div>
                 <label className="project-form-label">
                   <Scale size={14} />
-                  Equipment Weight
-                  (in kg)
+                  Equipment Weight (kg)
                 </label>
 
                 <input
@@ -1437,6 +1457,30 @@ export const ProjectPlanningView: React.FC<
                   min="0"
                   step="any"
                   placeholder="e.g. 15000"
+                  className="project-form-input"
+                />
+              </div>
+
+              {/* FABRICATION WEIGHT */}
+
+              <div>
+                <label className="project-form-label">
+                  <Scale size={14} />
+                  Fabrication Weight (kg)
+                </label>
+
+                <input
+                  type="number"
+                  name="fabricationWeight"
+                  value={
+                    formData.fabricationWeight
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  min="0"
+                  step="any"
+                  placeholder="e.g. 12000"
                   className="project-form-input"
                 />
               </div>
@@ -1472,13 +1516,13 @@ export const ProjectPlanningView: React.FC<
               />
             </div>
 
-            {/* ROW 4 - DATES */}
+            {/* ROW 4 - DATES (ZERO DATE, CDD, EDD) */}
 
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns:
-                  '1fr 1fr',
+                  '1fr 1fr 1fr',
                 gap: '1rem',
                 marginBottom:
                   '1rem',
@@ -1545,6 +1589,28 @@ export const ProjectPlanningView: React.FC<
                   message={
                     validationErrors.endDate
                   }
+                />
+              </div>
+
+              {/* EDD */}
+
+              <div>
+                <label className="project-form-label">
+                  <Calendar size={14} />
+                  EDD
+                </label>
+
+                <input
+                  type="date"
+                  name="edd"
+                  onClick={openDatePicker}
+                  value={
+                    formData.edd
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  className="project-form-input"
                 />
               </div>
             </div>
@@ -3167,7 +3233,11 @@ export const ProjectPlanningView: React.FC<
                 </th>
 
                 <th style={tableHeaderStyle}>
-                  Weight (kg)
+                  Eq. Weight
+                </th>
+
+                <th style={tableHeaderStyle}>
+                  Fab. Weight
                 </th>
 
                 <th style={tableHeaderStyle}>
@@ -3183,8 +3253,15 @@ export const ProjectPlanningView: React.FC<
                 </th>
 
                 <th style={tableHeaderStyle}>
-                  Zero Date /
+                  Zero Date
+                </th>
+
+                <th style={tableHeaderStyle}>
                   CDD
+                </th>
+
+                <th style={tableHeaderStyle}>
+                  EDD
                 </th>
 
                 <th style={tableHeaderStyle}>
@@ -3228,6 +3305,10 @@ export const ProjectPlanningView: React.FC<
                     project.project_code ||
                     project.projectCode ||
                     '—';
+
+                  const fabW =
+                    project.fabricationWeight ||
+                    project.fabrication_weight;
 
                   return (
                     <tr
@@ -3328,7 +3409,7 @@ export const ProjectPlanningView: React.FC<
                           '—'}
                       </td>
 
-                      {/* WEIGHT */}
+                      {/* EQ WEIGHT */}
 
                       <td
                         style={
@@ -3338,6 +3419,20 @@ export const ProjectPlanningView: React.FC<
                         {project.equipmentWeight
                           ? `${Number(
                               project.equipmentWeight
+                            ).toLocaleString()} kg`
+                          : '—'}
+                      </td>
+
+                      {/* FAB WEIGHT */}
+
+                      <td
+                        style={
+                          tableCellStyle
+                        }
+                      >
+                        {fabW
+                          ? `${Number(
+                              fabW
                             ).toLocaleString()} kg`
                           : '—'}
                       </td>
@@ -3377,42 +3472,67 @@ export const ProjectPlanningView: React.FC<
                           '—'}
                       </td>
 
-                      {/* DATES */}
+                      {/* ZERO DATE */}
 
                       <td
-                        style={
-                          tableCellStyle
-                        }
+                        style={{
+                          ...tableCellStyle,
+                          whiteSpace: 'nowrap',
+                        }}
                       >
-                        <div>
-                          <span
-                            style={{
-                              color:
-                                'var(--text-dim)',
-                              fontSize:
-                                '0.7rem',
-                            }}
-                          >
-                            Zero:{' '}
-                          </span>
+                        <span
+                          style={{
+                            color:
+                              'var(--accent-emerald)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatDisplayDate(
+                            project.startDate || project.zero_date
+                          )}
+                        </span>
+                      </td>
 
-                          {formatDisplayDate(project.startDate)}
-                        </div>
+                      {/* CDD */}
 
-                        <div>
-                          <span
-                            style={{
-                              color:
-                                'var(--text-dim)',
-                              fontSize:
-                                '0.7rem',
-                            }}
-                          >
-                            CDD:{' '}
-                          </span>
+                      <td
+                        style={{
+                          ...tableCellStyle,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span
+                          style={{
+                            color:
+                              'var(--accent-cyan)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatDisplayDate(
+                            project.endDate || project.cdd
+                          )}
+                        </span>
+                      </td>
 
-                          {formatDisplayDate(project.endDate)}
-                        </div>
+                      {/* EDD */}
+
+                      <td
+                        style={{
+                          ...tableCellStyle,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span
+                          style={{
+                            color:
+                              '#a855f7',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {formatDisplayDate(
+                            project.edd || project.edd_date
+                          )}
+                        </span>
                       </td>
 
                       {/* HOURS */}

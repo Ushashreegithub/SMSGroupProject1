@@ -87,9 +87,11 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     location: '',
     equipmentName: '',
     equipmentWeight: '',
+    fabricationWeight: '',
     description: '',
     startDate: '',
     endDate: '',
+    edd: '',
     projectManager: '',
     priority: 'Medium',
     status: 'Planned',
@@ -117,9 +119,11 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         projectNumber: wbs,
         equipmentName: project.equipment_name || project.equipmentName || '',
         equipmentWeight: project.equipment_weight || project.equipmentWeight || '',
+        fabricationWeight: project.fabrication_weight || project.fabricationWeight || '',
         description: project.description || '',
         startDate: project.zero_date || project.startDate || '',
         endDate: project.cdd || project.endDate || '',
+        edd: project.edd || project.edd_date || '',
         projectManager: project.project_manager || project.projectManager || '',
         priority: project.priority || 'Medium',
         status: project.status || 'Planned',
@@ -271,11 +275,15 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
       equipment_name: projectMeta.equipmentName,
       equipmentWeight: projectMeta.equipmentWeight,
       equipment_weight: projectMeta.equipmentWeight,
+      fabricationWeight: projectMeta.fabricationWeight,
+      fabrication_weight: projectMeta.fabricationWeight,
       description: projectMeta.description,
       startDate: projectMeta.startDate,
       zero_date: projectMeta.startDate,
       endDate: projectMeta.endDate,
       cdd: projectMeta.endDate,
+      edd: projectMeta.edd,
+      edd_date: projectMeta.edd,
       projectManager: projectMeta.projectManager,
       project_manager: projectMeta.projectManager,
       plannedHours: totalPlannedHours,
@@ -607,8 +615,8 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               </div>
             </div>
 
-            {/* ROW 3: Equipment Name & Equipment Weight */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
+            {/* ROW 3: Equipment Name, Equipment Weight & Fabrication Weight */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '0.85rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
                   Equipment Name
@@ -650,13 +658,34 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   }}
                 />
               </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                  Fabrication Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  name="fabricationWeight"
+                  value={projectMeta.fabricationWeight}
+                  onChange={handleMetaChange}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    background: 'rgba(10, 16, 30, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.88rem',
+                  }}
+                />
+              </div>
             </div>
 
             {/* ROW 4: Dates & Project Manager */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                  Zero Date (Start Date) *
+                  Zero Date (Start) *
                 </label>
                 <input
                   type="date"
@@ -686,6 +715,27 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                   value={projectMeta.endDate}
                   onChange={handleMetaChange}
                   required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    background: 'rgba(10, 16, 30, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.85rem',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                  EDD
+                </label>
+                <input
+                  type="date"
+                  name="edd"
+                  value={projectMeta.edd}
+                  onChange={handleMetaChange}
                   style={{
                     width: '100%',
                     padding: '0.6rem 0.8rem',

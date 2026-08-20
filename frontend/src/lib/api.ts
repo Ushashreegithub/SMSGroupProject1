@@ -496,9 +496,11 @@ export interface BackendProject {
   project_number: string;
   equipment_name?: string;
   equipment_weight?: string;
+  fabrication_weight?: string;
   description?: string;
   zero_date?: string;
   cdd?: string;
+  edd?: string;
   project_manager?: string;
   total_planned_hours: number;
   priority: string;
