@@ -195,6 +195,94 @@ export const ProjectPlanningView: React.FC<
 
   /*
    * ============================================================
+   * PROJECT TABLE PAGINATION + HORIZONTAL SCROLLBAR
+   * ============================================================
+   */
+  const PROJECTS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const tableScrollRef =
+    useRef<HTMLDivElement>(null);
+  const bottomScrollbarRef =
+    useRef<HTMLDivElement>(null);
+  const [tableScrollWidth, setTableScrollWidth] =
+    useState(0);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      projects.length / PROJECTS_PER_PAGE
+    )
+  );
+
+  const paginatedProjects = projects.slice(
+    (currentPage - 1) * PROJECTS_PER_PAGE,
+    currentPage * PROJECTS_PER_PAGE
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const updateTableScrollWidth = () => {
+      const width =
+        tableScrollRef.current?.scrollWidth || 0;
+      setTableScrollWidth(width);
+    };
+
+    updateTableScrollWidth();
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(updateTableScrollWidth)
+        : null;
+
+    if (tableScrollRef.current && resizeObserver) {
+      resizeObserver.observe(tableScrollRef.current);
+      const table =
+        tableScrollRef.current.querySelector('table');
+      if (table) resizeObserver.observe(table);
+    }
+
+    window.addEventListener(
+      'resize',
+      updateTableScrollWidth
+    );
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener(
+        'resize',
+        updateTableScrollWidth
+      );
+    };
+  }, [paginatedProjects.length, currentPage]);
+
+  const handleTableHorizontalScroll = () => {
+    if (
+      tableScrollRef.current &&
+      bottomScrollbarRef.current
+    ) {
+      bottomScrollbarRef.current.scrollLeft =
+        tableScrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleBottomHorizontalScroll = () => {
+    if (
+      tableScrollRef.current &&
+      bottomScrollbarRef.current
+    ) {
+      tableScrollRef.current.scrollLeft =
+        bottomScrollbarRef.current.scrollLeft;
+    }
+  };
+
+  /*
+   * ============================================================
    * VALIDATION STATE
    * ============================================================
    */
@@ -338,12 +426,6 @@ export const ProjectPlanningView: React.FC<
             wbs_no: wbs,
             projectCode: bp.project_code || wbs,
             project_code: bp.project_code || wbs,
-            // Keep SO fields from the backend so they are not lost when
-            // backendProjects are normalized for the table.
-            soNo: bp.so_no ?? bp.soNo ?? '',
-            so_no: bp.so_no ?? bp.soNo ?? '',
-            soLineItems: bp.so_line_items ?? bp.soLineItems ?? '',
-            so_line_items: bp.so_line_items ?? bp.soLineItems ?? '',
             location: bp.location || mainTask.location || '',
             projectName: bp.project_name || cName,
             project_name: bp.project_name || cName,
@@ -367,6 +449,7 @@ export const ProjectPlanningView: React.FC<
         });
 
         setProjects(formattedProjects);
+        setCurrentPage(1);
         localStorage.setItem(
           'sms_project_planning',
           JSON.stringify(formattedProjects)
@@ -394,6 +477,7 @@ export const ProjectPlanningView: React.FC<
         );
 
         setProjects(projectsWithSerialNo);
+        setCurrentPage(1);
 
         localStorage.setItem(
           'sms_project_planning',
@@ -914,13 +998,6 @@ export const ProjectPlanningView: React.FC<
 
       projectCode: pCode,
       project_code: pCode,
-
-      // Include SO fields in the project object so the table and
-      // localStorage can display them immediately after creation.
-      soNo: formData.soNo,
-      so_no: formData.soNo,
-      soLineItems: formData.soLineItems,
-      so_line_items: formData.soLineItems,
 
       location:
         formData.location ||
@@ -3177,7 +3254,7 @@ export const ProjectPlanningView: React.FC<
             boxShadow:
               '0 4px 15px rgba(0, 0, 0, 0.04)',
             overflowX:
-              'auto',
+              'hidden',
           }}
         >
           <div
@@ -3225,16 +3302,26 @@ export const ProjectPlanningView: React.FC<
             </div>
           </div>
 
-          <table
+          <div
+            ref={tableScrollRef}
+            onScroll={handleTableHorizontalScroll}
             style={{
-              width:
-                '100%',
-              borderCollapse:
-                'collapse',
-              fontSize:
-                '0.8rem',
+              width: '100%',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              scrollbarWidth: 'thin',
+              scrollbarColor:
+                '#94a3b8 #e2e8f0',
             }}
           >
+            <table
+              style={{
+                width: '100%',
+                minWidth: '1900px',
+                borderCollapse: 'collapse',
+                fontSize: '0.8rem',
+              }}
+            >
             <thead>
               <tr
                 style={{
@@ -3325,7 +3412,7 @@ export const ProjectPlanningView: React.FC<
             </thead>
 
             <tbody>
-              {projects.map(
+              {paginatedProjects.map(
                 (
                   project: any
                 ) => {
@@ -3418,7 +3505,7 @@ export const ProjectPlanningView: React.FC<
                           tableCellStyle
                         }
                       >
-                        {project.so_no ?? project.soNo ?? '—'}
+                        {project.so_no || project.soNo || '—'}
                       </td>
 
                       {/* SO LINE ITEMS */}
@@ -3428,7 +3515,7 @@ export const ProjectPlanningView: React.FC<
                           tableCellStyle
                         }
                       >
-                        {project.so_line_items ?? project.soLineItems ?? '—'}
+                        {project.so_line_items || project.soLineItems || '—'}
                       </td>
 
                       {/* PROJECT CODE */}
@@ -3726,7 +3813,260 @@ export const ProjectPlanningView: React.FC<
                 }
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
+
+          {/*
+           * Sticky horizontal scrollbar. It mirrors the table's
+           * horizontal position so the user does not have to reach
+           * the end of the wide table to scroll left/right.
+           */}
+          {tableScrollWidth > 0 && (
+            <div
+              ref={bottomScrollbarRef}
+              onScroll={handleBottomHorizontalScroll}
+              aria-label="Project table horizontal scrollbar"
+              style={{
+                position: 'sticky',
+                bottom: '10px',
+                zIndex: 10,
+                width: '100%',
+                height: '18px',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                marginTop: '0.65rem',
+                paddingBottom: '2px',
+                background: '#ffffff',
+                borderTop:
+                  '1px solid #e2e8f0',
+                scrollbarWidth: 'thin',
+                scrollbarColor:
+                  '#64748b #e2e8f0',
+              }}
+            >
+              <div
+                style={{
+                  width: `${Math.max(
+                    tableScrollWidth,
+                    1
+                  )}px`,
+                  height: '1px',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Pagination controls */}
+          {projects.length > PROJECTS_PER_PAGE && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                marginTop: '1rem',
+                paddingTop: '0.9rem',
+                borderTop: '1px solid #e2e8f0',
+                flexWrap: 'wrap',
+              }}
+            >
+              <span
+                style={{
+                  color: 'var(--text-muted)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                }}
+              >
+                Showing{' '}
+                {Math.min(
+                  (currentPage - 1) * PROJECTS_PER_PAGE + 1,
+                  projects.length
+                )}
+                {' - '}
+                {Math.min(
+                  currentPage * PROJECTS_PER_PAGE,
+                  projects.length
+                )}{' '}
+                of {projects.length} projects
+              </span>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage(1)
+                  }
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.42rem 0.7rem',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    background:
+                      currentPage === 1
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    color:
+                      currentPage === 1
+                        ? '#94a3b8'
+                        : '#0f172a',
+                    cursor:
+                      currentPage === 1
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  First
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((page) =>
+                      Math.max(1, page - 1)
+                    )
+                  }
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.42rem 0.7rem',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    background:
+                      currentPage === 1
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    color:
+                      currentPage === 1
+                        ? '#94a3b8'
+                        : '#0f172a',
+                    cursor:
+                      currentPage === 1
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  Previous
+                </button>
+
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1
+                ).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage(page)
+                    }
+                    style={{
+                      minWidth: '34px',
+                      padding: '0.42rem 0.55rem',
+                      border:
+                        currentPage === page
+                          ? '1px solid var(--accent-cyan)'
+                          : '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      background:
+                        currentPage === page
+                          ? 'var(--accent-cyan)'
+                          : '#ffffff',
+                      color:
+                        currentPage === page
+                          ? '#ffffff'
+                          : '#0f172a',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((page) =>
+                      Math.min(
+                        totalPages,
+                        page + 1
+                      )
+                    )
+                  }
+                  disabled={
+                    currentPage === totalPages
+                  }
+                  style={{
+                    padding: '0.42rem 0.7rem',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    background:
+                      currentPage === totalPages
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    color:
+                      currentPage === totalPages
+                        ? '#94a3b8'
+                        : '#0f172a',
+                    cursor:
+                      currentPage === totalPages
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  Next
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage(totalPages)
+                  }
+                  disabled={
+                    currentPage === totalPages
+                  }
+                  style={{
+                    padding: '0.42rem 0.7rem',
+                    border:
+                      '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    background:
+                      currentPage === totalPages
+                        ? '#f8fafc'
+                        : '#ffffff',
+                    color:
+                      currentPage === totalPages
+                        ? '#94a3b8'
+                        : '#0f172a',
+                    cursor:
+                      currentPage === totalPages
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
