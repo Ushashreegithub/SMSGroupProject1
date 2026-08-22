@@ -19,6 +19,7 @@ import {
   MapPin,
   Tag,
   Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import { ProjectDetailsModal } from './ProjectDetailsModal';
 import TaskScheduleSlider from './TaskScheduleSlider';
@@ -193,6 +194,10 @@ export const ProjectPlanningView: React.FC<
 
   const [saveMessage, setSaveMessage] = useState('');
 
+  // Keeps the three-dot delete menu open for only one project at a time.
+  const [openActionMenuId, setOpenActionMenuId] =
+    useState<string | number | null>(null);
+
   /*
    * ============================================================
    * PROJECT TABLE PAGINATION + HORIZONTAL SCROLLBAR
@@ -206,6 +211,10 @@ export const ProjectPlanningView: React.FC<
   const bottomScrollbarRef =
     useRef<HTMLDivElement>(null);
   const [tableScrollWidth, setTableScrollWidth] =
+    useState(0);
+  const [tableViewportWidth, setTableViewportWidth] =
+    useState(0);
+  const [bottomScrollbarViewportWidth, setBottomScrollbarViewportWidth] =
     useState(0);
 
   const totalPages = Math.max(
@@ -228,9 +237,15 @@ export const ProjectPlanningView: React.FC<
 
   useEffect(() => {
     const updateTableScrollWidth = () => {
-      const width =
-        tableScrollRef.current?.scrollWidth || 0;
+      const tableContainer = tableScrollRef.current;
+      const width = tableContainer?.scrollWidth || 0;
+      const viewportWidth = tableContainer?.clientWidth || 0;
+      const fixedScrollbarWidth =
+        bottomScrollbarRef.current?.clientWidth || 0;
+
       setTableScrollWidth(width);
+      setTableViewportWidth(viewportWidth);
+      setBottomScrollbarViewportWidth(fixedScrollbarWidth);
     };
 
     updateTableScrollWidth();
@@ -260,6 +275,29 @@ export const ProjectPlanningView: React.FC<
       );
     };
   }, [paginatedProjects.length, currentPage]);
+
+  // The fixed scrollbar is rendered after the first measurement. Re-measure
+  // its viewport so its scroll range exactly matches the table's scroll range.
+  useEffect(() => {
+    if (!tableScrollWidth) return;
+
+    const measureScrollbarViewports = () => {
+      setTableViewportWidth(
+        tableScrollRef.current?.clientWidth || 0
+      );
+      setBottomScrollbarViewportWidth(
+        bottomScrollbarRef.current?.clientWidth || 0
+      );
+    };
+
+    const frame = requestAnimationFrame(measureScrollbarViewports);
+    window.addEventListener('resize', measureScrollbarViewports);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', measureScrollbarViewports);
+    };
+  }, [tableScrollWidth, currentPage, paginatedProjects.length]);
 
   const handleTableHorizontalScroll = () => {
     if (
@@ -3305,13 +3343,13 @@ export const ProjectPlanningView: React.FC<
           <div
             ref={tableScrollRef}
             onScroll={handleTableHorizontalScroll}
+            className="project-planning-table-scroll"
             style={{
               width: '100%',
               overflowX: 'auto',
               overflowY: 'hidden',
-              scrollbarWidth: 'thin',
-              scrollbarColor:
-                '#94a3b8 #e2e8f0',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
             }}
           >
             <table
@@ -3737,6 +3775,7 @@ export const ProjectPlanningView: React.FC<
                         >
                           <button
                             onClick={() => {
+                              setOpenActionMenuId(null);
                               setSelectedProject(
                                 project
                               );
@@ -3780,32 +3819,105 @@ export const ProjectPlanningView: React.FC<
                             Edit
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteProject(project);
-                            }}
-                            title="Delete project"
+                          {/*
+                           * The action menu is anchored to the three-dot
+                           * button and opens UPWARD. This is important for
+                           * the last table rows because the pagination bar
+                           * is directly below the table.
+                           */}
+                          <div
                             style={{
+                              position: 'relative',
                               display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.3rem',
-                              padding: '0.35rem 0.55rem',
-                              background: 'rgba(239, 68, 68, 0.10)',
-                              border: '1px solid rgba(239, 68, 68, 0.35)',
-                              borderRadius: '6px',
-                              color: '#f87171',
-                              fontWeight: 700,
-                              fontSize: '0.72rem',
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <Trash2 size={13} />
-                            Delete
-                          </button>
+                            <button
+                              type="button"
+                              aria-label="More actions"
+                              aria-expanded={
+                                openActionMenuId === project.id
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenActionMenuId((current) =>
+                                  current === project.id
+                                    ? null
+                                    : project.id
+                                );
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '36px',
+                                height: '36px',
+                                padding: 0,
+                                background: '#f8fafc',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '7px',
+                                color: '#334155',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <MoreVertical size={17} />
+                            </button>
+
+                            {openActionMenuId === project.id && (
+                              <div
+                                onClick={(e) =>
+                                  e.stopPropagation()
+                                }
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                  bottom: 'calc(100% + 7px)',
+                                  minWidth: '150px',
+                                  padding: '0.35rem',
+                                  background: '#ffffff',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: '8px',
+                                  boxShadow:
+                                    '0 10px 25px rgba(15, 23, 42, 0.18)',
+                                  zIndex: 10000,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionMenuId(null);
+                                    handleDeleteProject(project);
+                                  }}
+                                  title="Delete project"
+                                  style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.55rem 0.65rem',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    color: '#ef4444',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background =
+                                      'rgba(239, 68, 68, 0.08)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background =
+                                      'transparent';
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -3817,37 +3929,32 @@ export const ProjectPlanningView: React.FC<
           </div>
 
           {/*
-           * Sticky horizontal scrollbar. It mirrors the table's
-           * horizontal position so the user does not have to reach
-           * the end of the wide table to scroll left/right.
+           * Fixed horizontal scrollbar. The table's own scrollbar is
+           * hidden so this is the only visible horizontal scrollbar.
+           * It stays at the bottom of the browser viewport and mirrors
+           * the table's horizontal scroll position.
            */}
           {tableScrollWidth > 0 && (
             <div
               ref={bottomScrollbarRef}
               onScroll={handleBottomHorizontalScroll}
               aria-label="Project table horizontal scrollbar"
-              style={{
-                position: 'sticky',
-                bottom: '10px',
-                zIndex: 10,
-                width: '100%',
-                height: '18px',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                marginTop: '0.65rem',
-                paddingBottom: '2px',
-                background: '#ffffff',
-                borderTop:
-                  '1px solid #e2e8f0',
-                scrollbarWidth: 'thin',
-                scrollbarColor:
-                  '#64748b #e2e8f0',
-              }}
+              className="project-planning-fixed-scrollbar"
             >
               <div
                 style={{
+                  // The fixed scrollbar is wider than the table container
+                  // (it spans the full browser content area). Add that
+                  // difference to the dummy content width so both scrollbars
+                  // have the exact same maximum scrollLeft. This prevents the
+                  // final Action column from remaining partially hidden.
                   width: `${Math.max(
-                    tableScrollWidth,
+                    tableScrollWidth +
+                      Math.max(
+                        0,
+                        bottomScrollbarViewportWidth -
+                          tableViewportWidth
+                      ),
                     1
                   )}px`,
                   height: '1px',
@@ -4088,6 +4195,57 @@ export const ProjectPlanningView: React.FC<
           loadProjects
         }
       />
+
+      <style>{`
+        /* Hide the table's native horizontal scrollbar. */
+        .project-planning-table-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* One persistent scrollbar at the bottom of the viewport. */
+        .project-planning-fixed-scrollbar {
+          position: fixed;
+          left: 285px;
+          right: 0;
+          bottom: 0;
+          z-index: 9999;
+          height: 20px;
+          padding: 2px 10px 3px 10px;
+          box-sizing: border-box;
+          overflow-x: auto;
+          overflow-y: hidden;
+          background: rgba(255, 255, 255, 0.98);
+          border-top: 1px solid #cbd5e1;
+          box-shadow: 0 -3px 10px rgba(15, 23, 42, 0.08);
+          scrollbar-width: auto;
+          scrollbar-color: #64748b #e2e8f0;
+        }
+
+        .project-planning-fixed-scrollbar::-webkit-scrollbar {
+          height: 12px;
+        }
+
+        .project-planning-fixed-scrollbar::-webkit-scrollbar-track {
+          background: #e2e8f0;
+          border-radius: 6px;
+        }
+
+        .project-planning-fixed-scrollbar::-webkit-scrollbar-thumb {
+          background: #64748b;
+          border-radius: 6px;
+          border: 2px solid #e2e8f0;
+        }
+
+        .project-planning-fixed-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #475569;
+        }
+
+        @media (max-width: 900px) {
+          .project-planning-fixed-scrollbar {
+            left: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 };
